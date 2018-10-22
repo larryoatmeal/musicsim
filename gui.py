@@ -127,6 +127,13 @@ class KivyApp(App):
         self.simulationTex.size_hint = (None, 1.0)
         self.simulationTex.width = 1020
         layout.add_widget(self.simulationTex)
+        layout.add_widget(self.configure_buttons())
+
+        self.start_gui_poll()
+        return layout
+
+    def configure_buttons(self):
+        buttonLayout = BoxLayout(orientation='vertical')
 
         btn1 = Button(text='Start')
         btn1.bind(on_press=lambda x: self.start_simulation())
@@ -134,23 +141,17 @@ class KivyApp(App):
         btn2 = Button(text='Stop')
         btn2.bind(on_press=lambda x: self.stop_simulation())
 
-        layout.add_widget(btn1)
-        layout.add_widget(btn2)
+        buttonLayout.add_widget(btn1)
+        buttonLayout.add_widget(btn2)
 
-        # buf = np.zeros([256, 256, 3])
-        # buf[:, :, 0] = 1
-        # buf[:50, :50, 1] = 1
-        #
-        # tex.update(buf)
+        return buttonLayout
 
+    def start_gui_poll(self):
         def my_callback(dt):
             print "UI callback", dt
             self.update_texture()
-
         # call my_callback every 0.5 seconds
         Clock.schedule_interval(my_callback, 0.5)
-
-        return layout
 
     def create_texture_widget(self, sim):
 
@@ -200,7 +201,7 @@ class KivyApp(App):
 
             if iteration % 1000 == 0:
                 print('Simulation, iteration {}.'.format(iteration))
-                
+
             self.sim.step()
             # time.sleep(1)
 
