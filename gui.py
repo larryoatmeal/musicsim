@@ -124,7 +124,7 @@ class KivyApp(App):
         layout = BoxLayout(padding=10)
         self.simulationTex = self.create_texture_widget(self.sim)
 
-        self.simulationTex.size_hint = (None, 0.3)
+        self.simulationTex.size_hint = (None, 1.0)
         self.simulationTex.width = 1020
         layout.add_widget(self.simulationTex)
 
@@ -197,9 +197,12 @@ class KivyApp(App):
                 # Stop running this thread so the main Python process can exit.
                 return
             iteration += 1
-            print('Simulation, iteration {}.'.format(iteration))
+
+            if iteration % 1000 == 0:
+                print('Simulation, iteration {}.'.format(iteration))
+                
             self.sim.step()
-            time.sleep(1)
+            # time.sleep(1)
 
     def start_simulation(self):
 
