@@ -1,0 +1,201 @@
+import numpy as np
+from lookbackQueue import LookbackQueue
+from collections import namedtuple
+
+Velocity = namedtuple('Point', 'x y')
+
+RHO = 1.1760
+C = 3.4723e2
+GAMMA = 1.4017
+MU = 1.8460e-5
+PRANDLT = 0.7073
+DT = 7.81e-6
+DS = 3.83e-3
+
+# W = 220
+# H = 110
+
+AXIS_X = 'x'
+AXIS_Y = 'y'
+
+DIR_LEFT = 'left'
+DIR_RIGHT = 'right'
+DIR_UP = 'up'
+DIR_DOWN = 'down'
+
+D_DIR_FORWARD = 'forward'
+D_DIR_BACKWARD = 'backward'
+
+RHO_C_2_DT = RHO * C * C * DT
+
+H = 0.015  # 15mm, bore diameter of clarinet
+
+W_J = 1.2e-2
+H_R = 6e-4
+K_R = 8e6
+DELTA_P_MAX = K_R * H_R
+
+
+def divergence(v):
+    return gradient(v.x, AXIS_X, D_DIR_BACKWARD) + gradient(v.y, AXIS_Y, D_DIR_BACKWARD)
+
+
+def gradient(m, axis, d_dir):
+    if d_dir == D_DIR_FORWARD:
+        if axis == AXIS_X:
+            return (shift(m, DIR_LEFT) - m) / DS
+        else:
+            return (shift(m, DIR_UP) - m) / DS
+    else:
+        if axis == AXIS_X:
+            return (m - shift(m, DIR_RIGHT)) / DS
+        else:
+            return (m - shift(m, DIR_DOWN)) / DS
+
+
+def pressure_step(p, v, sigma_prime_dt):
+    num = p - RHO_C_2_DT * divergence(v)
+    den = sigma_prime_dt + 1
+    return num / den
+
+
+def vb_step(p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells):
+    # excitation
+    delta_p = p_mouth - p_bore
+
+    u_bore = 0
+    if p_bore > 0:
+        u_bore = W_J * H_R * (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO)
+
+    mag_v_bore = u_bore / (H * DS * num_excite_cells)
+
+    vb_x_excitor = excitor_cells * mag_v_bore
+
+    # wall velocities
+    vb_x_wall = np.zeros(wall_cells.shape)
+    vb_y_wall = np.zeros(wall_cells.shape)
+
+    vb_x = vb_x_wall + vb_x_excitor
+    vb_y = vb_y_wall
+
+    vb = Velocity(x=vb_x, y=vb_y)
+    return vb
+
+
+def shift(m, direction):
+    result = np.empty_like(m)
+
+    if direction == DIR_DOWN:
+        result[0, :] = m[0, :]
+        result[1:, :] = m[0:-1, :]
+
+    elif direction == DIR_UP:
+        result[0:-1, :] = m[1:, :]
+        result[-1, :] = m[-1, :]
+
+    elif direction == DIR_RIGHT:
+        result[:, 0] = m[:, 0]
+        result[:, 1:] = m[:, 0:-1]
+
+    elif direction == DIR_LEFT:
+        result[:, 0:-1] = m[:, 1:]
+        result[:, -1] = m[:, -1]
+
+    return result
+
+
+def compute_sigma_prime_dt(sigma, beta):
+    return (sigma - beta + 1) * DT
+
+
+def beta_fix(beta, direction):
+    return np.minimum(beta, shift(beta, direction))
+
+
+def velocity_step(p, v, vb, beta_vx, beta_vy, sigma_prime_dt_vx, sigma_prime_dt_vy):
+    vNewX = velocity_step_dir(p, v.x, beta_vx, vb.x, sigma_prime_dt_vx, AXIS_X)
+    vNewY = velocity_step_dir(p, v.y, beta_vy, vb.y, sigma_prime_dt_vy, AXIS_Y)
+    return Velocity(x=vNewX, y=vNewY)
+
+
+# beta, sigma_prime_dt need to be based on correctly modified beta for boundary. Should only be called by velocity_step
+def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, direction):
+    num = beta * v - beta * beta * DT * gradient(p, direction, D_DIR_FORWARD) / RHO + sigma_prime_dt * vb
+    den = beta + sigma_prime_dt
+    return num / den
+
+
+class Simulation:
+    def __init__(self, listener, width, height, wall_template, excitor_template, p_bore_coord, listen_coord,
+                 pml_layers):
+        self.listener = listener
+
+        # Caching these for performance
+
+        self.beta = generate_beta(wall_template, excitor_template)
+        self.sigma = generate_sigma(width, height, pml_layers)
+
+        self.sigma_prime_dt = compute_sigma_prime_dt(self.sigma, self.beta)
+        self.beta_vx = beta_fix(self.beta, DIR_LEFT)
+        self.beta_vy = beta_fix(self.beta, DIR_UP)
+        self.sigma_prime_dt_vx = compute_sigma_prime_dt(self.sigma, self.beta_vx)
+        self.sigma_prime_dt_vy = compute_sigma_prime_dt(self.sigma, self.beta_vy)
+
+        self.p_bore_coord = p_bore_coord
+        self.listen_coord = listen_coord
+        self.excitor_template = excitor_template
+        self.num_excite_cells = np.count_nonzero(excitor_template)
+        self.wall_template = wall_template
+
+        # Queue for previous results
+        self.pressures = LookbackQueue(2)
+        self.velocities = LookbackQueue(2)
+
+        self.p_mouth = 3000  # not sure what this should actually be
+
+        ZERO_PRESSURE_TEMPLATE = np.zeros([width, height])
+        ZERO_VELOCITY_TEMPLATE = Velocity(x=np.zeros([width, height]), y=np.zeros([width, height]))
+        self.pressures.add(ZERO_PRESSURE_TEMPLATE)
+        self.pressures.add(ZERO_PRESSURE_TEMPLATE)
+        self.velocities.add(ZERO_VELOCITY_TEMPLATE)
+        self.velocities.add(ZERO_VELOCITY_TEMPLATE)
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def step(self):
+        newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
+
+        p_bore = self.pressures[-1][self.p_bore_coord[0], self.p_bore_coord[1]]
+        newVb = vb_step(self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells, self.wall_template)
+
+        newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
+                             self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
+
+        self.pressures.add(newP)
+        self.velocities.add(newV)
+
+    def update(self):
+        self.listener.update(self.pressures[-1])
+
+
+def generate_beta(wall_template, excitor_template):
+    # excitor template and wall template should not overlap
+    # beta=0 when there exists a wall/excitor
+    return 1 - (wall_template + excitor_template)
+
+
+def generate_sigma(w, h, pml_layers):
+    sigma = np.zeros([w, h])
+
+    pmlValues = np.linspace(0.5 / DT, 0, pml_layers + 1)
+    # slow but doesn't matter, we compute this once
+    for i in range(0, len(pmlValues)):
+        for x in range(i, w - i):
+            for y in range(i, h - i):
+                sigma[x, y] = pmlValues[i]
+
+    return sigma
