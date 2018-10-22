@@ -1,10 +1,11 @@
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.graphics.texture import Texture
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.properties import ListProperty, NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Ellipse
@@ -75,7 +76,7 @@ class TextureWidget(Widget):
             self.buffer[0:sW, 0:sH, 0] = buf
 
         self.texture.blit_buffer(self.buffer.reshape(-1).astype(np.float32), colorfmt='rgb', bufferfmt='float')
-
+        self.canvas.ask_update()
 
 class DotWidget(Widget):
     color = ListProperty([1, 0, 0])
@@ -93,6 +94,33 @@ class DotWidget(Widget):
             Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
 
 
+DRAW_BETA = 'DRAW_BETA'
+DRAW_SIGMA = 'DRAW_SIGMA'
+DRAW_PRESSURE = 'DRAW_PRESSURE'
+DRAW_VX = 'DRAW_VX'
+DRAW_VY = 'DRAW_VY'
+DRAW_VBX = "DRAW_VBX"
+DRAW_VBY = "DRAW_VBY"
+DRAW_BETA_VX = "DRAW_BETA_VX"
+DRAW_BETA_VY = "DRAW_BETA_VY"
+DRAW_EXCITOR = "DRAW_EXCITOR"
+DRAW_LISTENER = "DRAW_LISTENER"
+
+DRAW_MODES = [
+    (DRAW_BETA, "beta"),
+    (DRAW_SIGMA, "sigma"),
+    (DRAW_PRESSURE, "p"),
+    (DRAW_VX, "vx"),
+    (DRAW_VY, "vy"),
+    (DRAW_VBX, "vbx"),
+    (DRAW_VBY, "vby"),
+    (DRAW_BETA_VX, "beta_vx"),
+    (DRAW_BETA_VY, "beta_vy"),
+    (DRAW_EXCITOR, "excitor"),
+    (DRAW_LISTENER, "listener"),
+]
+
+
 class KivyApp(App):
     stopSimulation = threading.Event()
 
@@ -101,12 +129,14 @@ class KivyApp(App):
 
         self.sim = self.init_sim()
         self.simulationTex = None
+
+        self.draw_mode = DRAW_BETA
+
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
 
     @staticmethod
     def init_sim():
-
         w = 220
         h = 110
 
@@ -144,14 +174,46 @@ class KivyApp(App):
         buttonLayout.add_widget(btn1)
         buttonLayout.add_widget(btn2)
 
+        dropdown = DropDown()
+        for (mode, title) in DRAW_MODES:
+            # When adding widgets, we need to specify the height manually
+            # (disabling the size_hint_y) so the dropdown can calculate
+            # the area it needs.
+            btn = Button(text=title, size_hint_y=None, height=44)
+
+            # for each button, attach a callback that will call the select() method
+            # on the dropdown. We'll pass the text of the button as the data of the
+            # selection
+
+            def btn_release_listener(display_mode):
+                def listener(b):
+                    print "Set draw mode", display_mode
+                    self.draw_mode = display_mode
+                    dropdown.select(b.text)
+
+                return listener
+
+            btn.bind(on_release=btn_release_listener(mode))
+
+            # then add the button inside the dropdown
+            dropdown.add_widget(btn)
+
+        dropdownButton = Button(text='Display')
+        dropdownButton.bind(on_release=dropdown.open)
+        dropdown.bind(on_select=lambda instance, x: setattr(dropdownButton, 'text', x))
+
+        buttonLayout.add_widget(dropdownButton)
         return buttonLayout
 
     def start_gui_poll(self):
+
+        @mainthread
         def my_callback(dt):
-            print "UI callback", dt
+            # print "UI callback", dt
             self.update_texture()
+
         # call my_callback every 0.5 seconds
-        Clock.schedule_interval(my_callback, 0.5)
+        Clock.schedule_interval(my_callback, 0.1)
 
     def create_texture_widget(self, sim):
 
@@ -173,23 +235,15 @@ class KivyApp(App):
         return tex
 
     def update_texture(self):
-        self.simulationTex.update(self.sim.beta)
 
-    # def _hook_in_simulator(self):
-    #     wall = np.zeros([220, 110])
-    #     wall[110, 40:150] = 1
-    #     wall[115, 40:150] = 1
-    #     excitor = np.zeros([220, 110])
-    #     excitor[111:115, 40] = 1
-    #
-    #     sim = simulation.Simulation(None, 220, 110, wall, excitor, (113, 41), (170, 25), 6)
-    #
-    #     sim.listener = self._setup_texture_and_return_handler(220, 110, (0, 0))
-    #
-
-    # def start_loop(self):
-    #     def
-    #     event =
+        if self.draw_mode == DRAW_BETA:
+            self.simulationTex.update(self.sim.beta)
+        elif self.draw_mode == DRAW_BETA_VY:
+            self.simulationTex.update(self.sim.beta_vy)
+        elif self.draw_mode == DRAW_BETA_VX:
+            self.simulationTex.update(self.sim.beta_vx)
+        else:
+            print "DRAW_MODE", self.draw_mode, " NOT SUPPORTED"
 
     def simulation_thread(self):
         iteration = 0

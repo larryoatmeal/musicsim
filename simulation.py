@@ -184,19 +184,6 @@ class Simulation:
         self.pressures.add(newP)
         self.velocities.add(newV)
 
-    def report(self):
-        if self.listener:
-            self.listener({
-                "pressure": self.pressures[-1],
-                "velocities": self.velocities[-1],
-                "beta": self.beta,
-                "beta_vx": self.beta_vx,
-                "beta_vy": self.beta_vy,
-                "sigma": self.sigma,
-                "excitor": self.excitor_template,
-                "num_excite_cells": self.num_excite_cells,
-                "walls": self.wall_template
-            })
 
 
 def generate_beta(wall_template, excitor_template):
