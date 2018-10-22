@@ -150,15 +150,21 @@ class Simulation:
         # Queue for previous results
         self.pressures = LookbackQueue(2)
         self.velocities = LookbackQueue(2)
+        self.vbs = LookbackQueue(2)
 
         self.p_mouth = 3000  # not sure what this should actually be
 
-        ZERO_PRESSURE_TEMPLATE = np.zeros([width, height])
-        ZERO_VELOCITY_TEMPLATE = Velocity(x=np.zeros([width, height]), y=np.zeros([width, height]))
+        ZERO_PRESSURE_TEMPLATE = np.zeros([height, width])
+        ZERO_VELOCITY_TEMPLATE = Velocity(x=np.zeros([height, width]), y=np.zeros([height, width]))
         self.pressures.add(ZERO_PRESSURE_TEMPLATE)
         self.pressures.add(ZERO_PRESSURE_TEMPLATE)
         self.velocities.add(ZERO_VELOCITY_TEMPLATE)
         self.velocities.add(ZERO_VELOCITY_TEMPLATE)
+        self.vbs.add(ZERO_VELOCITY_TEMPLATE)
+        self.vbs.add(ZERO_VELOCITY_TEMPLATE)
+
+        self.width = width
+        self.height = height
 
     def start(self):
         pass
@@ -178,8 +184,19 @@ class Simulation:
         self.pressures.add(newP)
         self.velocities.add(newV)
 
-    def update(self):
-        self.listener.update(self.pressures[-1])
+    def report(self):
+        if self.listener:
+            self.listener({
+                "pressure": self.pressures[-1],
+                "velocities": self.velocities[-1],
+                "beta": self.beta,
+                "beta_vx": self.beta_vx,
+                "beta_vy": self.beta_vy,
+                "sigma": self.sigma,
+                "excitor": self.excitor_template,
+                "num_excite_cells": self.num_excite_cells,
+                "walls": self.wall_template
+            })
 
 
 def generate_beta(wall_template, excitor_template):
@@ -189,13 +206,13 @@ def generate_beta(wall_template, excitor_template):
 
 
 def generate_sigma(w, h, pml_layers):
-    sigma = np.zeros([w, h])
+    sigma = np.zeros([h, w])
 
     pmlValues = np.linspace(0.5 / DT, 0, pml_layers + 1)
     # slow but doesn't matter, we compute this once
     for i in range(0, len(pmlValues)):
         for x in range(i, w - i):
             for y in range(i, h - i):
-                sigma[x, y] = pmlValues[i]
+                sigma[y, x] = pmlValues[i]
 
     return sigma
