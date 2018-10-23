@@ -17,6 +17,7 @@ import time
 
 
 # class TextureDrawer(Widget):
+from audioWriter import write_audio
 
 
 class TextureWidget(Widget):
@@ -180,6 +181,12 @@ class KivyApp(App):
 
         return layout
 
+    def play_audio(self):
+        normalized_audio = self.sim.audio / np.max(np.abs(self.sim.audio))
+        # print normalized_audio
+        write_audio("sound.wav", normalized_audio)
+
+
     def configure_buttons(self):
         buttonLayout = BoxLayout(orientation='vertical')
 
@@ -189,8 +196,12 @@ class KivyApp(App):
         btn2 = Button(text='Stop')
         btn2.bind(on_press=lambda x: self.stop_simulation())
 
+        btn3 = Button(text='Play')
+        btn3.bind(on_press=lambda x: self.play_audio())
+
         buttonLayout.add_widget(btn1)
         buttonLayout.add_widget(btn2)
+        buttonLayout.add_widget(btn3)
 
         dropdown = DropDown()
         for (mode, title) in DRAW_MODES:

@@ -12,6 +12,18 @@ PRANDLT = 0.7073
 DS = 3.83e-3
 
 DT = DS/(np.sqrt(2) * C) * 0.999999 # make sure we're actually below the condition
+
+
+DT_LISTEN = 1.0/44000
+SAMPLE_EVERY_N = int(round(DT_LISTEN/DT))
+
+REAL_LISTENING_FREQUENCY = 1/(SAMPLE_EVERY_N * DT)
+
+print SAMPLE_EVERY_N
+
+print DT_LISTEN/DT
+print REAL_LISTENING_FREQUENCY
+
 # DT = 7.81e-7
 
 # DT = 7.81e-9
@@ -43,7 +55,7 @@ DELTA_P_MAX = K_R * H_R
 
 EXCITATION_IMPULSE = "IMPULSE"
 EXCITATION_CLARINET = "CLARINET"
-
+MAX_AUDIO_SIZE = int(3 * REAL_LISTENING_FREQUENCY)
 
 # checked
 def divergence(v):
@@ -193,10 +205,7 @@ class Simulation:
 
         self.excitation_mode = EXCITATION_CLARINET
 
-        # TODO remove
-        source = self.empty()
-        source[50, 50] = 1
-        self.pressures.add(source)
+        self.audio = np.zeros(MAX_AUDIO_SIZE)
 
 
     def empty(self):
@@ -225,6 +234,11 @@ class Simulation:
         self.velocities.add(newV)
         self.vbs.add(newVb)
         self.iter = self.iter + 1
+
+        if self.iter % SAMPLE_EVERY_N == 0:
+            i = self.iter / SAMPLE_EVERY_N
+            if i < len(self.audio):
+                self.audio[i] = newP[self.listen_coord]
 
 
 def generate_beta(wall_template, excitor_template):
