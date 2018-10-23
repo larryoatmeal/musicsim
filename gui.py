@@ -152,17 +152,18 @@ class KivyApp(App):
         h = 110
 
         wall = np.zeros([h, w])
-        # wall[50, 40:150] = 1
-        # wall[55, 40:150] = 1
+        wall[50, 40:150] = 1
+        wall[55, 40:150] = 1
         excitor = np.zeros([h, w])
 
 
-        excitor[60, 60] = 1
+        # excitor[60, 60] = 1
 
-        # excitor[51:55, 40] = 1
+        excitor[51:55, 40] = 1
         p_bore_coord = (53, 41)
         listen_coord = (45, 155)
-        sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 20)
+        sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 6)
+
         return sim
 
     def build(self):
@@ -173,8 +174,10 @@ class KivyApp(App):
         self.simulationTex.width = 1020
         layout.add_widget(self.simulationTex)
         layout.add_widget(self.configure_buttons())
+        self.pressure_canvas = self.sim.empty_color()
 
         self.start_gui_poll()
+
         return layout
 
     def configure_buttons(self):
@@ -288,15 +291,19 @@ class KivyApp(App):
             self.simulationTex.update(empty)
 
         elif self.draw_mode == DRAW_PRESSURE:
-            pressureScaled = self.sim.pressures[-1]
-            print np.max(pressureScaled)
-            print pressureScaled.shape
-            self.simulationTex.update(pressureScaled)
+            pressureScaled = self.sim.pressures[-1]/1000
+            # print np.min(pressureScaled)
+            # self.simulationTex.update((pressureScaled + 2000)/4000)
+            self.pressure_canvas[:, :, 0] = pressureScaled
+            self.pressure_canvas[:, :, 1] = -pressureScaled
+            self.simulationTex.update(self.pressure_canvas)
+
         elif self.draw_mode == DRAW_VBX:
 
             self.simulationTex.update(self.sim.vbs[-1].x)
         elif self.draw_mode == DRAW_VBY:
             self.simulationTex.update(self.sim.vbs[-1].y)
+            print self.sim.vbs[-1].y.max()
         elif self.draw_mode == DRAW_VX:
             self.simulationTex.update(self.sim.velocities[-1].x)
         elif self.draw_mode == DRAW_VY:
@@ -322,7 +329,7 @@ class KivyApp(App):
                 print('Simulation, iteration {}.'.format(iteration))
 
             self.sim.step()
-            time.sleep(0.01)
+            # time.sleep(0.01)
 
     def start_simulation(self):
 

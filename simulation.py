@@ -9,11 +9,15 @@ C = 3.4723e2
 GAMMA = 1.4017
 MU = 1.8460e-5
 PRANDLT = 0.7073
-DT = 7.81e-6
-# DT = 7.81e-9
-
 DS = 3.83e-3
 
+DT = DS/(np.sqrt(2) * C) * 0.999999 # make sure we're actually below the condition
+# DT = 7.81e-7
+
+# DT = 7.81e-9
+
+AN = 0.01
+ADMITTANCE = 1 / (RHO * C * (1 + np.sqrt(1 - AN))/(1 - np.sqrt(1 - AN)))
 # W = 220
 # H = 110
 
@@ -69,7 +73,7 @@ def pressure_step(p, v, sigma_prime_dt):
     return num / den
 
 
-def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
+def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
     if excitation_mode == EXCITATION_CLARINET:
         # excitation
         delta_p = p_mouth - p_bore
@@ -83,7 +87,12 @@ def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, w
 
         # wall velocities
         vb_x_wall = np.zeros(wall_cells.shape)
-        vb_y_wall = np.zeros(wall_cells.shape)
+
+        facing_up_toward_wall = wall_cells * shift(p, DIR_UP) * -1 * ADMITTANCE
+        facing_down_toward_wall = shift(wall_cells, DIR_UP) * p * ADMITTANCE
+        # facing_down_toward_wall = -1 * shift(facing_up_toward_wall, DIR_UP)
+
+        vb_y_wall = facing_up_toward_wall + facing_down_toward_wall
 
         vb_x = vb_x_wall + vb_x_excitor
         vb_y = vb_y_wall
@@ -92,7 +101,7 @@ def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, w
         return vb
     elif excitation_mode == EXCITATION_IMPULSE:
         # checked
-        sine = excitor_cells * 0.1 * np.sin(iter_number * DT * 2 * 3.14 * 1000)
+        sine = excitor_cells * 0.001 * np.sin(iter_number * DT * 2 * 3.14 * 100)
         return Velocity(x=sine, y=sine)
 
 # checked
@@ -182,7 +191,7 @@ class Simulation:
 
         self.iter = 0
 
-        self.excitation_mode = EXCITATION_IMPULSE
+        self.excitation_mode = EXCITATION_CLARINET
 
         # TODO remove
         source = self.empty()
@@ -203,33 +212,19 @@ class Simulation:
         pass
 
     def step(self):
-        # newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
-        #
-        # p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
-        # newVb = vb_step(self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
-        #                 self.wall_template, self.iter)
-        #
-        # newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
-        #                      self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
+        newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
 
-        pOld = self.pressures[-1]
-        vOld = self.velocities[-1]
-        beta = np.ones([self.height, self.width])
-        vb = self.empty()
-        sigma_prime = 1 - self.beta + self.sigma
-        pNew = (pOld - (RHO * C * C * DT * (vOld.x - shift(vOld.x, DIR_RIGHT) + vOld.y - shift(vOld.y, DIR_DOWN))/DS))/(1 + sigma_prime * DT)
-        # print pNew.shape
-        vNewX = (beta*vOld.x - (beta*beta*DT*((shift(pNew, DIR_LEFT) - pNew)/DS)/RHO) + sigma_prime*DT*vb)/(beta + sigma_prime * DT)
-        vNewY = (beta*vOld.y - (beta*beta*DT*((shift(pNew, DIR_UP) - pNew)/DS)/RHO) + sigma_prime*DT*vb)/(beta + sigma_prime * DT)
+        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
+        newVb = vb_step(newP, self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
+                        self.wall_template, self.iter)
 
-        self.pressures.add(pNew)
-        self.velocities.add(Velocity(vNewX, vNewY))
+        newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
+                             self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
 
-
-        # self.pressures.add(newP)
-        # self.velocities.add(newV)
-        # self.vbs.add(newVb)
-        # self.iter = self.iter + 1
+        self.pressures.add(newP)
+        self.velocities.add(newV)
+        self.vbs.add(newVb)
+        self.iter = self.iter + 1
 
 
 def generate_beta(wall_template, excitor_template):
