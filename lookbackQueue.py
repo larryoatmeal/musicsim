@@ -15,3 +15,13 @@ class LookbackQueue:
 
     def __getitem__(self, key):
         return self.q[key]
+
+
+    def test(self):
+        self.add(-1)
+        for i in range(0, 100):
+            if i != self[-1] + 1:
+                print "ERROR"
+                break
+            self.add(i)
+        print "OKAY"

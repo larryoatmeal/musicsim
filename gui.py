@@ -290,6 +290,7 @@ class KivyApp(App):
         elif self.draw_mode == DRAW_PRESSURE:
             pressureScaled = self.sim.pressures[-1]
             print np.max(pressureScaled)
+            print pressureScaled.shape
             self.simulationTex.update(pressureScaled)
         elif self.draw_mode == DRAW_VBX:
 

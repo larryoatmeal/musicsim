@@ -184,6 +184,12 @@ class Simulation:
 
         self.excitation_mode = EXCITATION_IMPULSE
 
+        # TODO remove
+        source = self.empty()
+        source[50, 50] = 1
+        self.pressures.add(source)
+
+
     def empty(self):
         return np.zeros([self.height, self.width])
 
@@ -197,19 +203,33 @@ class Simulation:
         pass
 
     def step(self):
-        newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
+        # newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
+        #
+        # p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
+        # newVb = vb_step(self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
+        #                 self.wall_template, self.iter)
+        #
+        # newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
+        #                      self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
 
-        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
-        newVb = vb_step(self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
-                        self.wall_template, self.iter)
+        pOld = self.pressures[-1]
+        vOld = self.velocities[-1]
+        beta = np.ones([self.height, self.width])
+        vb = self.empty()
+        sigma_prime = 1 - self.beta + self.sigma
+        pNew = (pOld - (RHO * C * C * DT * (vOld.x - shift(vOld.x, DIR_RIGHT) + vOld.y - shift(vOld.y, DIR_DOWN))/DS))/(1 + sigma_prime * DT)
+        # print pNew.shape
+        vNewX = (beta*vOld.x - (beta*beta*DT*((shift(pNew, DIR_LEFT) - pNew)/DS)/RHO) + sigma_prime*DT*vb)/(beta + sigma_prime * DT)
+        vNewY = (beta*vOld.y - (beta*beta*DT*((shift(pNew, DIR_UP) - pNew)/DS)/RHO) + sigma_prime*DT*vb)/(beta + sigma_prime * DT)
 
-        newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
-                             self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
+        self.pressures.add(pNew)
+        self.velocities.add(Velocity(vNewX, vNewY))
 
-        self.pressures.add(newP)
-        self.velocities.add(newV)
-        self.vbs.add(newVb)
-        self.iter = self.iter + 1
+
+        # self.pressures.add(newP)
+        # self.velocities.add(newV)
+        # self.vbs.add(newVb)
+        # self.iter = self.iter + 1
 
 
 def generate_beta(wall_template, excitor_template):
