@@ -162,7 +162,7 @@ class KivyApp(App):
         excitor[51:55, 40] = 1
         p_bore_coord = (53, 41)
         listen_coord = (45, 155)
-        sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 20)
+        sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 6)
 
         return sim
 
@@ -303,6 +303,7 @@ class KivyApp(App):
             self.simulationTex.update(self.sim.vbs[-1].x)
         elif self.draw_mode == DRAW_VBY:
             self.simulationTex.update(self.sim.vbs[-1].y)
+            print self.sim.vbs[-1].y.max()
         elif self.draw_mode == DRAW_VX:
             self.simulationTex.update(self.sim.velocities[-1].x)
         elif self.draw_mode == DRAW_VY:

@@ -9,13 +9,15 @@ C = 3.4723e2
 GAMMA = 1.4017
 MU = 1.8460e-5
 PRANDLT = 0.7073
-# DT = 7.81e-8
-DT = 7.81e-7
+DS = 3.83e-3
+
+DT = DS/(np.sqrt(2) * C) * 0.999999 # make sure we're actually below the condition
+# DT = 7.81e-7
 
 # DT = 7.81e-9
 
-DS = 3.83e-3
-
+AN = 0.01
+ADMITTANCE = 1 / (RHO * C * (1 + np.sqrt(1 - AN))/(1 - np.sqrt(1 - AN)))
 # W = 220
 # H = 110
 
@@ -71,7 +73,7 @@ def pressure_step(p, v, sigma_prime_dt):
     return num / den
 
 
-def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
+def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
     if excitation_mode == EXCITATION_CLARINET:
         # excitation
         delta_p = p_mouth - p_bore
@@ -85,7 +87,12 @@ def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, w
 
         # wall velocities
         vb_x_wall = np.zeros(wall_cells.shape)
-        vb_y_wall = np.zeros(wall_cells.shape)
+
+        facing_up_toward_wall = wall_cells * shift(p, DIR_UP) * -1 * ADMITTANCE
+        facing_down_toward_wall = shift(wall_cells, DIR_UP) * p * ADMITTANCE
+        # facing_down_toward_wall = -1 * shift(facing_up_toward_wall, DIR_UP)
+
+        vb_y_wall = facing_up_toward_wall + facing_down_toward_wall
 
         vb_x = vb_x_wall + vb_x_excitor
         vb_y = vb_y_wall
@@ -202,7 +209,7 @@ class Simulation:
         newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
 
         p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
-        newVb = vb_step(self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
+        newVb = vb_step(newP, self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
                         self.wall_template, self.iter)
 
         newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
