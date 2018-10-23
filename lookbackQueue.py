@@ -8,7 +8,7 @@ class LookbackQueue:
         self.N = N
 
     def add(self, x):
-        if len(self.q) == self.N - 1:
+        if len(self.q) == self.N:
             self.q.popleft()
 
         self.q.append(x)

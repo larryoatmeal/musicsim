@@ -10,6 +10,8 @@ GAMMA = 1.4017
 MU = 1.8460e-5
 PRANDLT = 0.7073
 DT = 7.81e-6
+# DT = 7.81e-9
+
 DS = 3.83e-3
 
 # W = 220
@@ -35,53 +37,65 @@ H_R = 6e-4
 K_R = 8e6
 DELTA_P_MAX = K_R * H_R
 
+EXCITATION_IMPULSE = "IMPULSE"
+EXCITATION_CLARINET = "CLARINET"
 
+
+# checked
 def divergence(v):
     return gradient(v.x, AXIS_X, D_DIR_BACKWARD) + gradient(v.y, AXIS_Y, D_DIR_BACKWARD)
 
 
+# checked
 def gradient(m, axis, d_dir):
     if d_dir == D_DIR_FORWARD:
         if axis == AXIS_X:
             return (shift(m, DIR_LEFT) - m) / DS
-        else:
+        elif axis == AXIS_Y:
             return (shift(m, DIR_UP) - m) / DS
     else:
         if axis == AXIS_X:
             return (m - shift(m, DIR_RIGHT)) / DS
-        else:
+        elif axis == AXIS_Y:
             return (m - shift(m, DIR_DOWN)) / DS
 
+    print "ERROR, INVALID ARGS"
+    return m
 
+# checked
 def pressure_step(p, v, sigma_prime_dt):
     num = p - RHO_C_2_DT * divergence(v)
     den = sigma_prime_dt + 1
     return num / den
 
 
-def vb_step(p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells):
-    # excitation
-    delta_p = p_mouth - p_bore
+def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
+    if excitation_mode == EXCITATION_CLARINET:
+        # excitation
+        delta_p = p_mouth - p_bore
 
-    u_bore = 0
-    if p_bore > 0:
-        u_bore = W_J * H_R * (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO)
+        u_bore = 0
+        if delta_p > 0:
+            u_bore = W_J * H_R * (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO)
+        mag_v_bore = u_bore / (H * DS * num_excite_cells)
 
-    mag_v_bore = u_bore / (H * DS * num_excite_cells)
+        vb_x_excitor = excitor_cells * mag_v_bore
 
-    vb_x_excitor = excitor_cells * mag_v_bore
+        # wall velocities
+        vb_x_wall = np.zeros(wall_cells.shape)
+        vb_y_wall = np.zeros(wall_cells.shape)
 
-    # wall velocities
-    vb_x_wall = np.zeros(wall_cells.shape)
-    vb_y_wall = np.zeros(wall_cells.shape)
+        vb_x = vb_x_wall + vb_x_excitor
+        vb_y = vb_y_wall
 
-    vb_x = vb_x_wall + vb_x_excitor
-    vb_y = vb_y_wall
+        vb = Velocity(x=vb_x, y=vb_y)
+        return vb
+    elif excitation_mode == EXCITATION_IMPULSE:
+        # checked
+        sine = excitor_cells * 0.1 * np.sin(iter_number * DT * 2 * 3.14 * 1000)
+        return Velocity(x=sine, y=sine)
 
-    vb = Velocity(x=vb_x, y=vb_y)
-    return vb
-
-
+# checked
 def shift(m, direction):
     result = np.empty_like(m)
 
@@ -101,6 +115,9 @@ def shift(m, direction):
         result[:, 0:-1] = m[:, 1:]
         result[:, -1] = m[:, -1]
 
+    else:
+        print "ERROR, NOT VALID DIRECTION"
+
     return result
 
 
@@ -119,25 +136,25 @@ def velocity_step(p, v, vb, beta_vx, beta_vy, sigma_prime_dt_vx, sigma_prime_dt_
 
 
 # beta, sigma_prime_dt need to be based on correctly modified beta for boundary. Should only be called by velocity_step
-def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, direction):
-    num = beta * v - beta * beta * DT * gradient(p, direction, D_DIR_FORWARD) / RHO + sigma_prime_dt * vb
+def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, axis):
+    num = beta * v - (beta * beta * DT * gradient(p, axis, D_DIR_FORWARD) / RHO) + sigma_prime_dt * vb
     den = beta + sigma_prime_dt
     return num / den
 
 
 class Simulation:
-    def __init__(self, listener, width, height, wall_template, excitor_template, p_bore_coord, listen_coord,
+    def __init__(self, width, height, wall_template, excitor_template, p_bore_coord, listen_coord,
                  pml_layers):
-        self.listener = listener
-
+        self.width = width
+        self.height = height
         # Caching these for performance
-
         self.beta = generate_beta(wall_template, excitor_template)
         self.sigma = generate_sigma(width, height, pml_layers)
 
         self.sigma_prime_dt = compute_sigma_prime_dt(self.sigma, self.beta)
         self.beta_vx = beta_fix(self.beta, DIR_LEFT)
         self.beta_vy = beta_fix(self.beta, DIR_UP)
+
         self.sigma_prime_dt_vx = compute_sigma_prime_dt(self.sigma, self.beta_vx)
         self.sigma_prime_dt_vy = compute_sigma_prime_dt(self.sigma, self.beta_vy)
 
@@ -154,8 +171,8 @@ class Simulation:
 
         self.p_mouth = 3000  # not sure what this should actually be
 
-        ZERO_PRESSURE_TEMPLATE = np.zeros([height, width])
-        ZERO_VELOCITY_TEMPLATE = Velocity(x=np.zeros([height, width]), y=np.zeros([height, width]))
+        ZERO_PRESSURE_TEMPLATE = self.empty()
+        ZERO_VELOCITY_TEMPLATE = Velocity(x=self.empty(), y=self.empty())
         self.pressures.add(ZERO_PRESSURE_TEMPLATE)
         self.pressures.add(ZERO_PRESSURE_TEMPLATE)
         self.velocities.add(ZERO_VELOCITY_TEMPLATE)
@@ -163,8 +180,15 @@ class Simulation:
         self.vbs.add(ZERO_VELOCITY_TEMPLATE)
         self.vbs.add(ZERO_VELOCITY_TEMPLATE)
 
-        self.width = width
-        self.height = height
+        self.iter = 0
+
+        self.excitation_mode = EXCITATION_IMPULSE
+
+    def empty(self):
+        return np.zeros([self.height, self.width])
+
+    def empty_color(self):
+        return np.zeros([self.height, self.width, 3])
 
     def start(self):
         pass
@@ -175,15 +199,17 @@ class Simulation:
     def step(self):
         newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
 
-        p_bore = self.pressures[-1][self.p_bore_coord[0], self.p_bore_coord[1]]
-        newVb = vb_step(self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells, self.wall_template)
+        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
+        newVb = vb_step(self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
+                        self.wall_template, self.iter)
 
         newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
                              self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
 
         self.pressures.add(newP)
         self.velocities.add(newV)
-
+        self.vbs.add(newVb)
+        self.iter = self.iter + 1
 
 
 def generate_beta(wall_template, excitor_template):

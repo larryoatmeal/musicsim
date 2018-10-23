@@ -78,6 +78,7 @@ class TextureWidget(Widget):
         self.texture.blit_buffer(self.buffer.reshape(-1).astype(np.float32), colorfmt='rgb', bufferfmt='float')
         self.canvas.ask_update()
 
+
 class DotWidget(Widget):
     color = ListProperty([1, 0, 0])
 
@@ -105,7 +106,11 @@ DRAW_BETA_VX = "DRAW_BETA_VX"
 DRAW_BETA_VY = "DRAW_BETA_VY"
 DRAW_EXCITOR = "DRAW_EXCITOR"
 DRAW_LISTENER = "DRAW_LISTENER"
-
+DRAW_P_BORE_COORD = "DRAW_P_BORE_COORD"
+DRAW_STRUCTURE = "DRAW_STRUCTURE"
+DRAW_SIGMA_PRIME = "DRAW_SIGMA_PRIME"
+DRAW_SIGMA_PRIME_VX = "DRAW_SIGMA_PRIME_VX"
+DRAW_SIGMA_PRIME_VY = "DRAW_SIGMA_PRIME_VY"
 DRAW_MODES = [
     (DRAW_BETA, "beta"),
     (DRAW_SIGMA, "sigma"),
@@ -118,6 +123,12 @@ DRAW_MODES = [
     (DRAW_BETA_VY, "beta_vy"),
     (DRAW_EXCITOR, "excitor"),
     (DRAW_LISTENER, "listener"),
+    (DRAW_P_BORE_COORD, "p_bore_coord"),
+    (DRAW_STRUCTURE, "structure"),
+    (DRAW_SIGMA_PRIME, "sigma_prime"),
+    (DRAW_SIGMA_PRIME_VX, "sigma_prime_vx"),
+    (DRAW_SIGMA_PRIME_VY, "sigma_prime_vy"),
+
 ]
 
 
@@ -130,7 +141,7 @@ class KivyApp(App):
         self.sim = self.init_sim()
         self.simulationTex = None
 
-        self.draw_mode = DRAW_BETA
+        self.draw_mode = DRAW_PRESSURE
 
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
@@ -141,13 +152,17 @@ class KivyApp(App):
         h = 110
 
         wall = np.zeros([h, w])
-        wall[50, 40:150] = 1
-        wall[55, 40:150] = 1
+        # wall[50, 40:150] = 1
+        # wall[55, 40:150] = 1
         excitor = np.zeros([h, w])
-        excitor[51:55, 40] = 1
+
+
+        excitor[60, 60] = 1
+
+        # excitor[51:55, 40] = 1
         p_bore_coord = (53, 41)
         listen_coord = (45, 155)
-        sim = simulation.Simulation(None, w, h, wall, excitor, p_bore_coord, listen_coord, 6)
+        sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 20)
         return sim
 
     def build(self):
@@ -225,7 +240,7 @@ class KivyApp(App):
 
         dim = max(w_pow2, h_pow2)
 
-        tex = TextureWidget(width=dim, height=dim, scale=4, pos=[0, 0])
+        tex = TextureWidget(width=dim, height=dim, scale=5, pos=[0, 0])
 
         buf = np.zeros([sim.height, sim.width, 3])
         # buf[:, :, 0] = 0
@@ -235,6 +250,15 @@ class KivyApp(App):
         return tex
 
     def update_texture(self):
+        def normalize_positive_max(m):
+            return m / np.max(m)
+
+        def fill_color(canvas, template, color):
+            nonzero = np.nonzero(template)
+            canvas[nonzero[0], nonzero[1], :] = color
+
+        def fill_color_single(canvas, coord, color):
+            canvas[coord[0], coord[1], :] = color
 
         if self.draw_mode == DRAW_BETA:
             self.simulationTex.update(self.sim.beta)
@@ -242,6 +266,46 @@ class KivyApp(App):
             self.simulationTex.update(self.sim.beta_vy)
         elif self.draw_mode == DRAW_BETA_VX:
             self.simulationTex.update(self.sim.beta_vx)
+        elif self.draw_mode == DRAW_EXCITOR:
+            self.simulationTex.update(self.sim.excitor_template)
+        elif self.draw_mode == DRAW_LISTENER:
+            empty = self.sim.empty()
+            empty[self.sim.listen_coord[0], self.sim.listen_coord[1]] = 1
+            self.simulationTex.update(empty)
+        elif self.draw_mode == DRAW_P_BORE_COORD:
+            empty = self.sim.empty()
+            empty[self.sim.p_bore_coord[0], self.sim.p_bore_coord[1]] = 1
+            self.simulationTex.update(empty)
+        elif self.draw_mode == DRAW_SIGMA:
+            self.simulationTex.update(normalize_positive_max(self.sim.sigma))
+        elif self.draw_mode == DRAW_STRUCTURE:
+            empty = self.sim.empty_color()
+            # walls
+            fill_color(empty, self.sim.wall_template, color=(0, 1, 0))
+            fill_color(empty, self.sim.excitor_template, color=(0, 1, 1))
+            fill_color_single(empty, self.sim.p_bore_coord, color=(0, 1, 1))
+            fill_color_single(empty, self.sim.listen_coord, color=(0, 0, 1))
+            self.simulationTex.update(empty)
+
+        elif self.draw_mode == DRAW_PRESSURE:
+            pressureScaled = self.sim.pressures[-1]
+            print np.max(pressureScaled)
+            self.simulationTex.update(pressureScaled)
+        elif self.draw_mode == DRAW_VBX:
+
+            self.simulationTex.update(self.sim.vbs[-1].x)
+        elif self.draw_mode == DRAW_VBY:
+            self.simulationTex.update(self.sim.vbs[-1].y)
+        elif self.draw_mode == DRAW_VX:
+            self.simulationTex.update(self.sim.velocities[-1].x)
+        elif self.draw_mode == DRAW_VY:
+            self.simulationTex.update(self.sim.velocities[-1].y)
+        elif self.draw_mode == DRAW_SIGMA_PRIME:
+            self.simulationTex.update(self.sim.sigma_prime_dt/simulation.DT)
+        elif self.draw_mode == DRAW_SIGMA_PRIME_VX:
+            self.simulationTex.update(self.sim.sigma_prime_dt_vx/simulation.DT)
+        elif self.draw_mode == DRAW_SIGMA_PRIME_VY:
+            self.simulationTex.update(self.sim.sigma_prime_dt_vy/simulation.DT)
         else:
             print "DRAW_MODE", self.draw_mode, " NOT SUPPORTED"
 
@@ -257,7 +321,7 @@ class KivyApp(App):
                 print('Simulation, iteration {}.'.format(iteration))
 
             self.sim.step()
-            # time.sleep(1)
+            time.sleep(0.01)
 
     def start_simulation(self):
 
