@@ -9,7 +9,9 @@ C = 3.4723e2
 GAMMA = 1.4017
 MU = 1.8460e-5
 PRANDLT = 0.7073
-DT = 7.81e-6
+DT = 7.81e-8
+# DT = 7.81e-7
+
 # DT = 7.81e-9
 
 DS = 3.83e-3
@@ -92,7 +94,7 @@ def vb_step(excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, w
         return vb
     elif excitation_mode == EXCITATION_IMPULSE:
         # checked
-        sine = excitor_cells * 0.1 * np.sin(iter_number * DT * 2 * 3.14 * 1000)
+        sine = excitor_cells * 0.001 * np.sin(iter_number * DT * 2 * 3.14 * 100)
         return Velocity(x=sine, y=sine)
 
 # checked
@@ -182,7 +184,7 @@ class Simulation:
 
         self.iter = 0
 
-        self.excitation_mode = EXCITATION_IMPULSE
+        self.excitation_mode = EXCITATION_CLARINET
 
     def empty(self):
         return np.zeros([self.height, self.width])
