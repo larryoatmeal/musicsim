@@ -40,30 +40,6 @@ class TextureWidget(Widget):
             Rectangle(texture=self.texture, pos=self.pos, size=(self.width * self.scale, self.height * self.scale))
 
         self.buffer = np.ones([self.width, self.height, 3])
-        # self.bufferView = self.buffer.view().reshape(-1).astype(np.float32)
-        # # print buf.shape
-        # # buf[2, :, :] = np.zeros([self.width, self.height])
-        #
-        # buf[2, :, :] = np.ones([self.width, self.height]) * 1000
-        #
-        #
-        # bufView = buf.view(np.float32).reshape(-1)
-
-        # buf = np.array([int(x * 255 / size) for x in range(size)]).astype(np.uint8)
-
-    # initialize the array with the buffer values
-    # arr = array('B', buf)
-    # now blit the array
-
-    # # that's all ! you can use it in your graphics now :)
-    # # if self is a widget, you can do this
-
-    #     with self.canvas:
-    #         # draw a line using the default color
-    #
-    #         # lets draw a semi-transparent red square
-    #         Color(1, 0, 0, .5, mode='rgba')
-    #         Rectangle(pos=self.pos, size=self.size)
 
     def update(self, buf):
         # buf might not be size of buffer (for example, could be NPOT
@@ -155,11 +131,11 @@ class KivyApp(App):
         wall = np.zeros([h, w])
         wall[50, 40:150] = 1
         wall[55, 40:150] = 1
+
+        wall[55, 130] = 0
+        wall[55, 100] = 0
+
         excitor = np.zeros([h, w])
-
-
-        # excitor[60, 60] = 1
-
         excitor[51:55, 40] = 1
         p_bore_coord = (53, 41)
         listen_coord = (45, 155)
@@ -185,7 +161,6 @@ class KivyApp(App):
         normalized_audio = self.sim.audio / np.max(np.abs(self.sim.audio))
         # print normalized_audio
         write_audio("sound.wav", normalized_audio)
-
 
     def configure_buttons(self):
         buttonLayout = BoxLayout(orientation='vertical')
@@ -360,18 +335,6 @@ class KivyApp(App):
         # otherwise the app window will close, but the Python process will
         # keep running until all secondary threads exit.
         self.stopSimulation.set()
-
-    # # returns drawing function
-    # def _setup_texture_and_return_handler(self, w, h, pos=(0, 0)):
-    #
-    #     # defer to build time
-    #     tex = TextureWidget(width=w, height=h, pos=pos)
-    #
-    #     def draw_func(data):
-    #         tex.update(data)
-    #
-    #     self.root.add_widget(tex)
-    #     return draw_func
 
 
 if __name__ == '__main__':
