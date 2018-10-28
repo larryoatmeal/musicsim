@@ -11,13 +11,12 @@ MU = 1.8460e-5
 PRANDLT = 0.7073
 DS = 3.83e-3
 
-DT = DS/(np.sqrt(2) * C) * 0.999999 # make sure we're actually below the condition
+DT = DS / (np.sqrt(2) * C) * 0.999999  # make sure we're actually below the condition
 
+DT_LISTEN = 1.0 / 44000
+SAMPLE_EVERY_N = int(round(DT_LISTEN / DT))
 
-DT_LISTEN = 1.0/44000
-SAMPLE_EVERY_N = int(round(DT_LISTEN/DT))
-
-REAL_LISTENING_FREQUENCY = 1/(SAMPLE_EVERY_N * DT)
+REAL_LISTENING_FREQUENCY = 1 / (SAMPLE_EVERY_N * DT)
 
 # print SAMPLE_EVERY_N
 #
@@ -29,7 +28,7 @@ REAL_LISTENING_FREQUENCY = 1/(SAMPLE_EVERY_N * DT)
 # DT = 7.81e-9
 
 AN = 0.01
-ADMITTANCE = 1 / (RHO * C * (1 + np.sqrt(1 - AN))/(1 - np.sqrt(1 - AN)))
+ADMITTANCE = 1 / (RHO * C * (1 + np.sqrt(1 - AN)) / (1 - np.sqrt(1 - AN)))
 # W = 220
 # H = 110
 
@@ -44,7 +43,7 @@ DIR_DOWN = 'down'
 D_DIR_FORWARD = 'forward'
 D_DIR_BACKWARD = 'backward'
 
-RHO_C_2_DT = RHO * C * C * DT
+RHO_C_2_DT_DS = RHO * C * C * DT / DS
 
 H = 0.015  # 15mm, bore diameter of clarinet
 
@@ -57,6 +56,7 @@ EXCITATION_IMPULSE = "IMPULSE"
 EXCITATION_CLARINET = "CLARINET"
 MAX_AUDIO_SIZE = int(3 * REAL_LISTENING_FREQUENCY)
 
+
 # checked
 def divergence(v):
     return gradient(v.x, AXIS_X, D_DIR_BACKWARD) + gradient(v.y, AXIS_Y, D_DIR_BACKWARD)
@@ -66,22 +66,22 @@ def divergence(v):
 def gradient(m, axis, d_dir):
     if d_dir == D_DIR_FORWARD:
         if axis == AXIS_X:
-            return (shift(m, DIR_LEFT) - m) / DS
+            return shift(m, DIR_LEFT) - m
         elif axis == AXIS_Y:
-            return (shift(m, DIR_UP) - m) / DS
+            return shift(m, DIR_UP) - m
     else:
         if axis == AXIS_X:
-            return (m - shift(m, DIR_RIGHT)) / DS
+            return m - shift(m, DIR_RIGHT)
         elif axis == AXIS_Y:
-            return (m - shift(m, DIR_DOWN)) / DS
+            return m - shift(m, DIR_DOWN)
 
     print "ERROR, INVALID ARGS"
     return m
 
+
 # checked
-def pressure_step(p, v, sigma_prime_dt):
-    num = p - RHO_C_2_DT * divergence(v)
-    den = sigma_prime_dt + 1
+def pressure_step(p, v, den):
+    num = p - RHO_C_2_DT_DS * divergence(v)
     return num / den
 
 
@@ -115,6 +115,7 @@ def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells
         # checked
         sine = excitor_cells * 0.001 * np.sin(iter_number * DT * 2 * 3.14 * 100)
         return Velocity(x=sine, y=sine)
+
 
 # checked
 def shift(m, direction):
@@ -150,16 +151,16 @@ def beta_fix(beta, direction):
     return np.minimum(beta, shift(beta, direction))
 
 
-def velocity_step(p, v, vb, beta_vx, beta_vy, sigma_prime_dt_vx, sigma_prime_dt_vy):
-    vNewX = velocity_step_dir(p, v.x, beta_vx, vb.x, sigma_prime_dt_vx, AXIS_X)
-    vNewY = velocity_step_dir(p, v.y, beta_vy, vb.y, sigma_prime_dt_vy, AXIS_Y)
+def velocity_step(p, v, vb, beta_vx, beta_vy, sigma_prime_dt_vx, sigma_prime_dt_vy, coeff_vx_gradient,
+                  coeff_vy_gradient, den_vx, den_vy):
+    vNewX = velocity_step_dir(p, v.x, beta_vx, vb.x, sigma_prime_dt_vx, coeff_vx_gradient, den_vx, AXIS_X)
+    vNewY = velocity_step_dir(p, v.y, beta_vy, vb.y, sigma_prime_dt_vy, coeff_vy_gradient, den_vy, AXIS_Y)
     return Velocity(x=vNewX, y=vNewY)
 
 
 # beta, sigma_prime_dt need to be based on correctly modified beta for boundary. Should only be called by velocity_step
-def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, axis):
-    num = beta * v - (beta * beta * DT * gradient(p, axis, D_DIR_FORWARD) / RHO) + sigma_prime_dt * vb
-    den = beta + sigma_prime_dt
+def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, gradient_coeff, den, axis):
+    num = beta * v - (gradient_coeff * gradient(p, axis, D_DIR_FORWARD)) + sigma_prime_dt * vb
     return num / den
 
 
@@ -173,11 +174,20 @@ class Simulation:
         self.sigma = generate_sigma(width, height, pml_layers)
 
         self.sigma_prime_dt = compute_sigma_prime_dt(self.sigma, self.beta)
+
+        self.pressure_den = self.sigma_prime_dt + 1
+
         self.beta_vx = beta_fix(self.beta, DIR_LEFT)
         self.beta_vy = beta_fix(self.beta, DIR_UP)
 
+        self.coeff_vx_gradient = self.beta_vx * self.beta_vx * DT / RHO / DS
+        self.coeff_vy_gradient = self.beta_vy * self.beta_vy * DT / RHO / DS
+
         self.sigma_prime_dt_vx = compute_sigma_prime_dt(self.sigma, self.beta_vx)
         self.sigma_prime_dt_vy = compute_sigma_prime_dt(self.sigma, self.beta_vy)
+
+        self.vstep_denom_x = self.beta_vx + self.sigma_prime_dt_vx
+        self.vstep_denom_y = self.beta_vy + self.sigma_prime_dt_vy
 
         self.p_bore_coord = p_bore_coord
         self.listen_coord = listen_coord
@@ -207,7 +217,6 @@ class Simulation:
 
         self.audio = np.zeros(MAX_AUDIO_SIZE)
 
-
     def empty(self):
         return np.zeros([self.height, self.width])
 
@@ -221,14 +230,15 @@ class Simulation:
         pass
 
     def step(self):
-        newP = pressure_step(self.pressures[-1], self.velocities[-1], self.sigma_prime_dt)
+        newP = pressure_step(self.pressures[-1], self.velocities[-1], self.pressure_den)
 
-        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]] # should be new pressure I think
+        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]]  # should be new pressure I think
         newVb = vb_step(newP, self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
                         self.wall_template, self.iter)
 
         newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
-                             self.sigma_prime_dt_vx, self.sigma_prime_dt_vy)
+                             self.sigma_prime_dt_vx, self.sigma_prime_dt_vy,
+                             self.coeff_vx_gradient, self.coeff_vy_gradient, self.vstep_denom_x, self.vstep_denom_y)
 
         self.pressures.add(newP)
         self.velocities.add(newV)
