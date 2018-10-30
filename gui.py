@@ -199,9 +199,13 @@ class KivyApp(App):
         return layout
 
     def write_cell(self):
-
+        self.sim.wall_template[self.cursor[0], self.cursor[1]] = 1
+        self.sim.update_aux_cells()
         pass
+
     def delete_cell(self):
+        self.sim.wall_template[self.cursor[0], self.cursor[1]] = 0
+        self.sim.update_aux_cells()
         pass
 
     def key_action(self, *args):

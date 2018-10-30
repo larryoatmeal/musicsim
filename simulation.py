@@ -55,7 +55,7 @@ K_R = 8e6
 DELTA_P_MAX = K_R * H_R
 W_J_H_R = W_J * H_R
 
-W_J_H_R_H_DS = W_J_H_R/H_DS
+W_J_H_R_H_DS = W_J_H_R / H_DS
 
 EXCITATION_IMPULSE = "IMPULSE"
 EXCITATION_CLARINET = "CLARINET"
@@ -90,14 +90,15 @@ def pressure_step(p, v, den):
     return num / den
 
 
-def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, wall_cell_admittance_up, wall_cell_admittance_down, iter_number):
+def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, wall_cell_admittance_up,
+            wall_cell_admittance_down, iter_number):
     if excitation_mode == EXCITATION_CLARINET:
         # excitation
         delta_p = p_mouth - p_bore
 
         mag_v_bore = 0
         if delta_p > 0:
-            mag_v_bore = (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO) * W_J_H_R_H_DS/num_excite_cells
+            mag_v_bore = (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO) * W_J_H_R_H_DS / num_excite_cells
 
         vb_x_excitor = excitor_cells * mag_v_bore
 
@@ -123,7 +124,6 @@ def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells
 
 # checked
 def shift(m, direction):
-
     # return shift2(m, direction)
     result = np.empty_like(m)
 
@@ -147,6 +147,7 @@ def shift(m, direction):
         print "ERROR, NOT VALID DIRECTION"
 
     return result
+
 
 # this is slower...
 # def shift2(m, direction):
@@ -182,38 +183,20 @@ def velocity_step_dir(p, v, beta, vb, sigma_prime_dt, gradient_coeff, den, axis)
 
 
 class Simulation:
+
     def __init__(self, width, height, wall_template, excitor_template, p_bore_coord, listen_coord,
                  pml_layers):
         self.width = width
         self.height = height
         # Caching these for performance
-        self.beta = generate_beta(wall_template, excitor_template)
-        self.sigma = generate_sigma(width, height, pml_layers)
-
-        self.sigma_prime_dt = compute_sigma_prime_dt(self.sigma, self.beta)
-
-        self.pressure_den = self.sigma_prime_dt + 1
-
-        self.beta_vx = beta_fix(self.beta, DIR_LEFT)
-        self.beta_vy = beta_fix(self.beta, DIR_UP)
-
-        self.coeff_vx_gradient = self.beta_vx * self.beta_vx * DT / RHO / DS
-        self.coeff_vy_gradient = self.beta_vy * self.beta_vy * DT / RHO / DS
-
-        self.sigma_prime_dt_vx = compute_sigma_prime_dt(self.sigma, self.beta_vx)
-        self.sigma_prime_dt_vy = compute_sigma_prime_dt(self.sigma, self.beta_vy)
-
-        self.vstep_denom_x = self.beta_vx + self.sigma_prime_dt_vx
-        self.vstep_denom_y = self.beta_vy + self.sigma_prime_dt_vy
-
+        self.wall_template = wall_template
+        self.excitor_template = excitor_template
         self.p_bore_coord = p_bore_coord
         self.listen_coord = listen_coord
-        self.excitor_template = excitor_template
-        self.num_excite_cells = np.count_nonzero(excitor_template)
-        self.wall_template = wall_template
 
-        self.wall_cell_admittance_down = shift(self.wall_template, DIR_UP) * ADMITTANCE
-        self.wall_cell_admittance_up = self.wall_template * ADMITTANCE * -1
+        self.sigma = generate_sigma(width, height, pml_layers)
+
+        self.update_aux_cells()
 
         # Queue for previous results
         self.pressures = LookbackQueue(2)
@@ -236,6 +219,29 @@ class Simulation:
         self.excitation_mode = EXCITATION_CLARINET
 
         self.audio = np.zeros(MAX_AUDIO_SIZE)
+
+    def update_aux_cells(self):
+        self.beta = generate_beta(self.wall_template, self.excitor_template)
+        self.sigma_prime_dt = compute_sigma_prime_dt(self.sigma, self.beta)
+
+        self.pressure_den = self.sigma_prime_dt + 1
+
+        self.beta_vx = beta_fix(self.beta, DIR_LEFT)
+        self.beta_vy = beta_fix(self.beta, DIR_UP)
+
+        self.coeff_vx_gradient = self.beta_vx * self.beta_vx * DT / RHO / DS
+        self.coeff_vy_gradient = self.beta_vy * self.beta_vy * DT / RHO / DS
+
+        self.sigma_prime_dt_vx = compute_sigma_prime_dt(self.sigma, self.beta_vx)
+        self.sigma_prime_dt_vy = compute_sigma_prime_dt(self.sigma, self.beta_vy)
+
+        self.vstep_denom_x = self.beta_vx + self.sigma_prime_dt_vx
+        self.vstep_denom_y = self.beta_vy + self.sigma_prime_dt_vy
+
+        self.num_excite_cells = np.count_nonzero(self.excitor_template)
+
+        self.wall_cell_admittance_down = shift(self.wall_template, DIR_UP) * ADMITTANCE
+        self.wall_cell_admittance_up = self.wall_template * ADMITTANCE * -1
 
     def empty(self):
         return np.zeros([self.height, self.width])
