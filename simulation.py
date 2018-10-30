@@ -47,10 +47,15 @@ RHO_C_2_DT_DS = RHO * C * C * DT / DS
 
 H = 0.015  # 15mm, bore diameter of clarinet
 
+H_DS = H * DS
+
 W_J = 1.2e-2
 H_R = 6e-4
 K_R = 8e6
 DELTA_P_MAX = K_R * H_R
+W_J_H_R = W_J * H_R
+
+W_J_H_R_H_DS = W_J_H_R/H_DS
 
 EXCITATION_IMPULSE = "IMPULSE"
 EXCITATION_CLARINET = "CLARINET"
@@ -85,23 +90,22 @@ def pressure_step(p, v, den):
     return num / den
 
 
-def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, iter_number):
+def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells, wall_cells, wall_cell_admittance_up, wall_cell_admittance_down, iter_number):
     if excitation_mode == EXCITATION_CLARINET:
         # excitation
         delta_p = p_mouth - p_bore
 
-        u_bore = 0
+        mag_v_bore = 0
         if delta_p > 0:
-            u_bore = W_J * H_R * (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO)
-        mag_v_bore = u_bore / (H * DS * num_excite_cells)
+            mag_v_bore = (1 - delta_p / DELTA_P_MAX) * np.sqrt(2 * delta_p / RHO) * W_J_H_R_H_DS/num_excite_cells
 
         vb_x_excitor = excitor_cells * mag_v_bore
 
         # wall velocities
         vb_x_wall = np.zeros(wall_cells.shape)
 
-        facing_up_toward_wall = wall_cells * shift(p, DIR_UP) * -1 * ADMITTANCE
-        facing_down_toward_wall = shift(wall_cells, DIR_UP) * p * ADMITTANCE
+        facing_up_toward_wall = wall_cell_admittance_up * shift(p, DIR_UP)
+        facing_down_toward_wall = wall_cell_admittance_down * p
         # facing_down_toward_wall = -1 * shift(facing_up_toward_wall, DIR_UP)
 
         vb_y_wall = facing_up_toward_wall + facing_down_toward_wall
@@ -119,6 +123,8 @@ def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells
 
 # checked
 def shift(m, direction):
+
+    # return shift2(m, direction)
     result = np.empty_like(m)
 
     if direction == DIR_DOWN:
@@ -142,6 +148,17 @@ def shift(m, direction):
 
     return result
 
+# this is slower...
+# def shift2(m, direction):
+#     if direction == DIR_DOWN:
+#         return np.roll(m, 1, 0)
+#     elif direction == DIR_UP:
+#         return np.roll(m, -1, 0)
+#     elif direction == DIR_RIGHT:
+#         return np.roll(m, 1, 1)
+#     elif direction == DIR_LEFT:
+#         return np.roll(m, -1, 1)
+#     return None
 
 def compute_sigma_prime_dt(sigma, beta):
     return (sigma - beta + 1) * DT
@@ -195,6 +212,9 @@ class Simulation:
         self.num_excite_cells = np.count_nonzero(excitor_template)
         self.wall_template = wall_template
 
+        self.wall_cell_admittance_down = shift(self.wall_template, DIR_UP) * ADMITTANCE
+        self.wall_cell_admittance_up = self.wall_template * ADMITTANCE * -1
+
         # Queue for previous results
         self.pressures = LookbackQueue(2)
         self.velocities = LookbackQueue(2)
@@ -234,7 +254,7 @@ class Simulation:
 
         p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]]  # should be new pressure I think
         newVb = vb_step(newP, self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
-                        self.wall_template, self.iter)
+                        self.wall_template, self.wall_cell_admittance_up, self.wall_cell_admittance_down, self.iter)
 
         newV = velocity_step(newP, self.velocities[-1], newVb, self.beta_vx, self.beta_vy,
                              self.sigma_prime_dt_vx, self.sigma_prime_dt_vy,

@@ -19,7 +19,7 @@ listen_coord = (45, 155)
 sim = simulation.Simulation(w, h, wall, excitor, p_bore_coord, listen_coord, 6)
 
 
-N = 1000
+N = 128000
 
 def profile():
     for i in range(N):

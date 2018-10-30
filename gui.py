@@ -88,6 +88,7 @@ DRAW_STRUCTURE = "DRAW_STRUCTURE"
 DRAW_SIGMA_PRIME = "DRAW_SIGMA_PRIME"
 DRAW_SIGMA_PRIME_VX = "DRAW_SIGMA_PRIME_VX"
 DRAW_SIGMA_PRIME_VY = "DRAW_SIGMA_PRIME_VY"
+DRAW_EDIT = "DRAW_EDIT"
 DRAW_MODES = [
     (DRAW_BETA, "beta"),
     (DRAW_SIGMA, "sigma"),
@@ -105,6 +106,7 @@ DRAW_MODES = [
     (DRAW_SIGMA_PRIME, "sigma_prime"),
     (DRAW_SIGMA_PRIME_VX, "sigma_prime_vx"),
     (DRAW_SIGMA_PRIME_VY, "sigma_prime_vy"),
+    (DRAW_EDIT, "edit"),
 
 ]
 
@@ -118,7 +120,7 @@ class KivyApp(App):
         self.sim = self.init_sim()
         self.simulationTex = None
 
-        self.draw_mode = DRAW_PRESSURE
+        self.draw_mode = DRAW_EDIT
 
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
@@ -283,9 +285,7 @@ class KivyApp(App):
             self.pressure_canvas[:, :, 0] = pressureScaled
             self.pressure_canvas[:, :, 1] = -pressureScaled
             self.simulationTex.update(self.pressure_canvas)
-
         elif self.draw_mode == DRAW_VBX:
-
             self.simulationTex.update(self.sim.vbs[-1].x)
         elif self.draw_mode == DRAW_VBY:
             self.simulationTex.update(self.sim.vbs[-1].y)
@@ -300,6 +300,21 @@ class KivyApp(App):
             self.simulationTex.update(self.sim.sigma_prime_dt_vx/simulation.DT)
         elif self.draw_mode == DRAW_SIGMA_PRIME_VY:
             self.simulationTex.update(self.sim.sigma_prime_dt_vy/simulation.DT)
+
+        elif self.draw_mode == DRAW_EDIT:
+            pressureScaled = self.sim.pressures[-1]/1000
+            # print np.min(pressureScaled)
+            # self.simulationTex.update((pressureScaled + 2000)/4000)
+            self.pressure_canvas[:, :, 0] = pressureScaled
+            self.pressure_canvas[:, :, 1] = -pressureScaled
+
+            fill_color(self.pressure_canvas, self.sim.wall_template, color=(1, 1, 1))
+            fill_color(self.pressure_canvas, self.sim.excitor_template, color=(0, 1, 1))
+            fill_color_single(self.pressure_canvas, self.sim.p_bore_coord, color=(0, 1, 1))
+            fill_color_single(self.pressure_canvas, self.sim.listen_coord, color=(0, 0, 1))
+
+            self.simulationTex.update(self.pressure_canvas)
+
         else:
             print "DRAW_MODE", self.draw_mode, " NOT SUPPORTED"
 
