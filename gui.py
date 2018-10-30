@@ -1,5 +1,6 @@
 from kivy.app import App
 from kivy.clock import Clock, mainthread
+from kivy.core.window import Window
 from kivy.graphics.texture import Texture
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.properties import ListProperty, NumericProperty
@@ -84,10 +85,10 @@ class TextureWidget(Widget):
 
         x, y = (int(touch.pos[0]/self.scale), int(touch.pos[1]/self.scale))
 
-
         if x < self.orig_width and y < self.orig_height:
             self.touch_listener(x, y)
         # print x, y
+
 
 class DotWidget(Widget):
     color = ListProperty([1, 0, 0])
@@ -103,6 +104,7 @@ class DotWidget(Widget):
             Color(self.color[0], self.color[1], self.color[2])
             d = 30.
             Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
+
 
 
 DRAW_BETA = 'DRAW_BETA'
@@ -154,6 +156,7 @@ class KivyApp(App):
         self.simulationTex = None
 
         self.draw_mode = DRAW_EDIT
+        self.cursor = [0, 0]
 
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
@@ -192,7 +195,31 @@ class KivyApp(App):
 
         self.start_gui_poll()
 
+        Window.bind(on_key_down=self.key_action)
         return layout
+
+    def write_cell(self):
+
+        pass
+    def delete_cell(self):
+        pass
+
+    def key_action(self, *args):
+        print "got a key event: %s" % list(args)
+        k = args[1]
+        if k == 13: #enter
+            self.write_cell()
+        elif k == 8:
+            self.delete_cell()
+        elif k == 275: #right
+            self.cursor[1] += 1
+        elif k == 276: #left
+            self.cursor[1] -= 1
+        elif k == 273: #up
+            self.cursor[0] += 1
+        elif k == 274: #down
+            self.cursor[0] -= 1
+
 
     def play_audio(self):
         normalized_audio = self.sim.audio / np.max(np.abs(self.sim.audio))
@@ -271,8 +298,11 @@ class KivyApp(App):
         # call my_callback every 0.5 seconds
         Clock.schedule_interval(my_callback, 0.1)
 
+
+
     def on_touch(self, x, y):
         print x, y
+        self.cursor = [y, x]
 
     def create_texture_widget(self, sim):
 
@@ -356,6 +386,7 @@ class KivyApp(App):
             fill_color(self.pressure_canvas, self.sim.excitor_template, color=(0, 1, 1))
             fill_color_single(self.pressure_canvas, self.sim.p_bore_coord, color=(0, 1, 1))
             fill_color_single(self.pressure_canvas, self.sim.listen_coord, color=(0, 0, 1))
+            fill_color_single(self.pressure_canvas, self.cursor, color=(1, 1, 0))
 
             self.simulationTex.update(self.pressure_canvas)
 
