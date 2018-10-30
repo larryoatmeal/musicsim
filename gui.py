@@ -7,6 +7,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown
 from kivy.uix.label import Label
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Ellipse
 
@@ -18,7 +19,8 @@ import time
 
 # class TextureDrawer(Widget):
 from audioWriter import write_audio
-
+def round_up_power_2(x):
+    return 1 << (x - 1).bit_length()
 
 class TextureWidget(Widget):
     # create a 64x64 texture, defaults to rgba / ubyte
@@ -28,18 +30,33 @@ class TextureWidget(Widget):
 
     pos = ListProperty([0, 0])
 
-    def __init__(self, **kwargs):
-        print self.width
-        print self.height
-        print self.pos
+    def get_width(self):
+        return round_up_power_2(self.width) * self.scale
+
+    def get_height(self):
+        return round_up_power_2(self.height) * self.scale
+
+    def __init__(self, touch_listener, **kwargs):
+
         super(TextureWidget, self).__init__(**kwargs)
 
-        self.texture = Texture.create(size=(self.width, self.height))
+        self.orig_width =  self.width
+        self.orig_height =  self.height
+        # print se.lf.pos
+
+        w_pow2 = round_up_power_2(self.width)
+        h_pow2 = round_up_power_2(self.height)
+
+        dim = max(w_pow2, h_pow2)
+        print "dim", dim
+
+        self.texture = Texture.create(size=(dim, dim))
 
         with self.canvas:
-            Rectangle(texture=self.texture, pos=self.pos, size=(self.width * self.scale, self.height * self.scale))
+            Rectangle(texture=self.texture, pos=self.pos, size=(dim * self.scale, dim * self.scale))
 
-        self.buffer = np.ones([self.width, self.height, 3])
+        self.buffer = np.ones([dim, dim, 3])
+        self.touch_listener = touch_listener
 
     def update(self, buf):
         # buf might not be size of buffer (for example, could be NPOT
@@ -55,6 +72,22 @@ class TextureWidget(Widget):
         self.texture.blit_buffer(self.buffer.reshape(-1).astype(np.float32), colorfmt='rgb', bufferfmt='float')
         self.canvas.ask_update()
 
+    def on_touch_down(self, touch):
+
+        # print self.orig_width
+        # print self.orig_height
+        # print self.pos
+
+        # print(touch.pos)
+        # # print([self.width, self.height])
+        # print([self.orig_width * self.scale, self.orig_height * self.scale])
+
+        x, y = (int(touch.pos[0]/self.scale), int(touch.pos[1]/self.scale))
+
+
+        if x < self.orig_width and y < self.orig_height:
+            self.touch_listener(x, y)
+        # print x, y
 
 class DotWidget(Widget):
     color = ListProperty([1, 0, 0])
@@ -150,7 +183,9 @@ class KivyApp(App):
         self.simulationTex = self.create_texture_widget(self.sim)
 
         self.simulationTex.size_hint = (None, 1.0)
-        self.simulationTex.width = 1020
+        self.simulationTex.width = self.simulationTex.get_width()
+        self.simulationTex.height = 300
+
         layout.add_widget(self.simulationTex)
         layout.add_widget(self.configure_buttons())
         self.pressure_canvas = self.sim.empty_color()
@@ -209,6 +244,21 @@ class KivyApp(App):
         dropdown.bind(on_select=lambda instance, x: setattr(dropdownButton, 'text', x))
 
         buttonLayout.add_widget(dropdownButton)
+
+
+        editLayout = BoxLayout(orientation='horizontal')
+
+        walls = ToggleButton(text='Walls', group='edit',)
+        excitor = ToggleButton(text='Excitor', group='edit',)
+
+        editLayout.add_widget(walls)
+        editLayout.add_widget(excitor)
+
+        buttonLayout.add_widget(editLayout)
+        # excitor = ToggleButton(text='Female', group='sex', state='down')
+        # btn3 = ToggleButton(text='Mixed', group='sex')
+
+
         return buttonLayout
 
     def start_gui_poll(self):
@@ -221,18 +271,12 @@ class KivyApp(App):
         # call my_callback every 0.5 seconds
         Clock.schedule_interval(my_callback, 0.1)
 
+    def on_touch(self, x, y):
+        print x, y
+
     def create_texture_widget(self, sim):
 
-        def round_up_power_2(x):
-            return 1 << (x - 1).bit_length()
-
-        w_pow2 = round_up_power_2(sim.width)
-        h_pow2 = round_up_power_2(sim.height)
-
-        dim = max(w_pow2, h_pow2)
-
-        tex = TextureWidget(width=dim, height=dim, scale=5, pos=[0, 0])
-
+        tex = TextureWidget(self.on_touch, width=sim.width, height=sim.height, scale=5, pos=[0, 0])
         buf = np.zeros([sim.height, sim.width, 3])
         # buf[:, :, 0] = 0
         # buf[:sim.width / 2, :sim.height / 2, 1] = 1
