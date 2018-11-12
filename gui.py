@@ -106,7 +106,6 @@ class DotWidget(Widget):
             Ellipse(pos=(touch.x - d / 2, touch.y - d / 2), size=(d, d))
 
 
-
 DRAW_BETA = 'DRAW_BETA'
 DRAW_SIGMA = 'DRAW_SIGMA'
 DRAW_PRESSURE = 'DRAW_PRESSURE'
@@ -145,6 +144,8 @@ DRAW_MODES = [
 
 ]
 
+WRITE_LATCH = "WRITE_LATCH"
+
 
 class KivyApp(App):
     stopSimulation = threading.Event()
@@ -158,6 +159,7 @@ class KivyApp(App):
         self.draw_mode = DRAW_EDIT
         self.cursor = [0, 0]
 
+        self.write_mode = WRITE_LATCH
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
 
@@ -217,12 +219,20 @@ class KivyApp(App):
             self.delete_cell()
         elif k == 275: #right
             self.cursor[1] += 1
+            if self.write_mode == WRITE_LATCH:
+                self.write_cell()
         elif k == 276: #left
             self.cursor[1] -= 1
+            if self.write_mode == WRITE_LATCH:
+                self.write_cell()
         elif k == 273: #up
             self.cursor[0] += 1
+            if self.write_mode == WRITE_LATCH:
+                self.write_cell()
         elif k == 274: #down
             self.cursor[0] -= 1
+            if self.write_mode == WRITE_LATCH:
+                self.write_cell()
 
 
     def play_audio(self):
