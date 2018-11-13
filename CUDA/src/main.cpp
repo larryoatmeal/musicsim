@@ -71,7 +71,7 @@ int index_of_padded(int w, int h){
 }
 
 int N = 10000;
-int NUM_AUDIO_SAMPLES = N/SAMPLE_EVERY_N
+int NUM_AUDIO_SAMPLES = N/SAMPLE_EVERY_N;
 
 number* alloc_grid(){
   return (number *)calloc(SIMULATION_SIZE + PADDING, sizeof(number));
