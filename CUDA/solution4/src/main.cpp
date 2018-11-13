@@ -4,31 +4,6 @@
 #include "ArgParser.h"
 #include "Renderer.h"
 #include "Image.h"
-// int
-// main(int argc, const char *argv[])
-// {
-//     // Report help usage if no args specified.
-//     if (argc == 1) {
-//         std::cout << "Usage: a5 <args>\n"
-//             << "\n"
-//             << "Args:\n"
-//             << "\t-input <scene>\n"
-//             << "\t-size <width> <height>\n"
-//             << "\t-output <image.png>\n"
-//             << "\t[-depth <depth_min> <depth_max> <depth_image.png>\n]"
-//             << "\t[-normals <normals_image.png>]\n"
-//             << "\t[-bounces <max_bounces>\n]"
-//             << "\t[-shadows\n]"
-//             << "\n"
-//             ;
-//         return 1;
-//     }
-//
-//     ArgParser argsParser(argc, argv);
-//     Renderer renderer(argsParser);
-//     renderer.Render();
-//     return 0;
-// }
 
 #include <iostream>
 #include <string>
@@ -73,7 +48,6 @@ int STRIDE_Y = W;
 
 
 
-
 float P_MOUTH = 3000;
 
 int p_bore_index = 0;
@@ -96,9 +70,11 @@ int index_of_padded(int w, int h){
   return index_of(w, h) + PADDING_HALF;
 }
 
-
-
 int N = 10000;
+int NUM_AUDIO_SAMPLES = N/SAMPLE_EVERY_N
+
+
+int[] audio
 
 number* alloc_grid(){
   return (number *)calloc(SIMULATION_SIZE + PADDING, sizeof(number));
@@ -147,16 +123,6 @@ void swapPtr(number** p1, number **p2)
   *p2 = temp;
 }
 
-void swap2(number* a, number* b) {
-    number temp = *a;
-    *a = *b;
-    *b = temp;
-    // assert(*a == 17);
-    // assert(*b == 42);
-    // they're swapped!
-}
-
-
 
 int main() {
   cout << "Hello world!" << endl;
@@ -197,10 +163,6 @@ int main() {
       }
     }
 
-
-
-    cout << max_p  << ',' << max_i/STRIDE_Y << ':' << max_i % STRIDE_Y << endl;
-
     number delta_p = P_MOUTH - p[p_bore_index];
     for(int i = PADDING_HALF; i < SIMULATION_SIZE + PADDING_HALF; i++){
 
@@ -229,44 +191,9 @@ int main() {
       v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
     }
 
-    // if(n % 1000 == 0){
-    //   cout << "ITER: " << n << endl;
-    //   ofstream myfile;
-    //   myfile.open ("example.txt");
-    //   myfile << "Writing this to a file.\n";
-    //   for(int y = 0; y < H; y++){
-    //     for(int x = 0; x < W; x++){
-    //       myfile << sigma[index_of_padded(x, y)] << " ";
-    //     }
-    //     myfile << endl;
-    //   }
-    //   myfile.close();
-    // }
-
-
-
-    // for(int i = PADDING_HALF; i < SIMULATION_SIZE + PADDING_HALF; i++){
-    //   // gradient
-    //
-    //   // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
-    //   cout << p[i] << endl;
-    // }
-    // cout << p[listen_index] << endl;
-    //swap
-
-    std::string s = "out" + std::to_string(n) + ".png";
-
-
-    //
-    //
-    // for(int i = PADDING_HALF; i < SIMULATION_SIZE + PADDING_HALF; i++){
-    //   // gradient
-    //   // number divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
-    //   // number p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
-    //   p[i] = p_prev[i] + 0.05;
-    // }
-
     if(n % 100 == 0){
+      std::string s = "out" + std::to_string(n) + ".png";
+
       Image image(W, H);
       for(int y = 0; y < H; y++){
         for(int x = 0; x < W; x++){
@@ -286,25 +213,13 @@ int main() {
         }
       }
       image.savePNG(s);
-
     }
 
 
     swapPtr(&p, &p_prev);
     swapPtr(&v_x, &v_x_prev);
     swapPtr(&v_y, &v_y_prev);
-
-
-
-
-
   }
-
-
-
-
-
-
 
   free(beta);
   free(sigma);
