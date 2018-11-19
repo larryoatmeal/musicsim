@@ -22,21 +22,21 @@ int i
   return max(aux[i] & (1 << 0), 1);
 }
 
-__device__ void getExcitor(
+__device__ int getExcitor(
 int *aux,
 int i
 ){
   return max(aux[i] & (1 << 1), 1);
 }
 
-__device__ void getWall(
+__device__ int getWall(
 int *aux,
 int i
 ){
   return max(aux[i] & (1 << 2), 1);
 }
 
-__device__ void pressureStep(
+__device__ float pressureStep(
   float *v_x_prev,
   float *v_y_prev,
   float *p_prev,
@@ -65,7 +65,7 @@ __global__ void AudioKernel(
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
   int idy=blockIdx.y*blockDim.y+threadIdx.y;
 
-  let i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
+  int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
   p[i] = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
 
