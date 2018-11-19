@@ -43,6 +43,16 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
     return true;
 }
 
+bool fdtdMine(const float *aux_data, const int timesteps)
+{
+  
+
+}
+
+
+
+
+
 bool fdtdGPU(float *output, const float *input, const float *coeff, const int dimx, const int dimy, const int dimz, const int radius, const int timesteps, const int argc, const char **argv)
 {
     const int         outerDimx  = dimx + 2 * radius;

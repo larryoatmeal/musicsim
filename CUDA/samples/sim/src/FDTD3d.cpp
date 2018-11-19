@@ -126,6 +126,9 @@ bool runTest(int argc, const char **argv)
 
 
 
+
+    number *aux_cells;
+
     free(beta);
     free(sigma);
     free(p);
@@ -137,8 +140,8 @@ bool runTest(int argc, const char **argv)
     // device_output = (float *)calloc(volumeSize, sizeof(float));
     //
     // // Execute on the device
-    // printf("fdtdGPU...\n");
-    // fdtdGPU(device_output, input, coeff, dimx, dimy, dimz, radius, timesteps, argc, argv);
+    printf("fdtdGPU...\n");
+    fdtdMine(aux_cells, 100);
     // printf("fdtdGPU complete\n");
 
     return 0;
