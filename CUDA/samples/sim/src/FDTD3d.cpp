@@ -26,6 +26,9 @@
 #define CLAMP(a, min, max) ( MIN(max, MAX(a, min)) )
 #endif
 
+
+typedef float number;
+
 //// Name of the log file
 //const char *printfFile = "FDTD3d.txt";
 
@@ -61,13 +64,80 @@ void showHelp(const int argc, const char **argv)
     std::cout << std::endl << "Syntax:" << std::endl;
 }
 
-bool runTest(int argc, const char **argv)
-{
-    // float *host_output;
-    float *device_output;
-    float *input;
-    float *coeff;
 
+int index_of_padded(int w, int h){
+  return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
+}
+
+number* alloc_grid(){
+  return (number *)calloc(N_TOTAL, sizeof(float));
+}
+
+void init(number *walls, number *excitor, number *beta, number *sigma){
+    //walls
+
+    for(int i = 40; i < 150; i++){
+      walls[index_of_padded(i, 50)] = 1; //
+      walls[index_of_padded(i, 55)] = 1;
+    }
+
+    walls[index_of_padded(55, 130)] = 0;
+    walls[index_of_padded(55, 100)] = 0;
+
+    //excitor
+    for(int i = 51; i < 55; i++){
+      excitor[index_of_padded(40, i)] = 1;
+    }
+
+    p_bore_index = index_of_padded(41, 53);
+    listen_index = index_of_padded(45, 155);
+
+
+    //beta
+    for(int i = 0; i < N_TOTAL; i++){
+      beta[i] = 1 - (walls[i] + excitor[i]);
+    }
+
+    //sigma
+    for(int i = 0; i < PML_LAYERS + 1; i++){
+      for(int x = i; x < W - i; x++){
+        for(int y = i; y < H - i; y++){
+          sigma[index_of_padded(x, y)] = 0.5 / DT * (PML_LAYERS - i)/PML_LAYERS;
+        }
+      }
+    }
+
+}
+
+
+bool runTest(int argc, const char **argv)
+{  
+    number *walls = alloc_grid();
+    number *excitor = alloc_grid();
+    number *beta = alloc_grid();
+    number *sigma = alloc_grid();
+
+    init(walls, excitor, beta, sigma);
+
+
+    number *p = alloc_grid();
+    number *v_x = alloc_grid();
+    number *v_y = alloc_grid();
+
+    number *p_prev = alloc_grid();
+    number *v_x_prev = alloc_grid();
+    number *v_y_prev = alloc_grid();
+
+
+
+    free(beta);
+    free(sigma);
+    free(p);
+    free(v_x);
+    free(v_y);
+    free(p_prev);
+    free(v_x_prev);
+    free(v_y_prev);
     // device_output = (float *)calloc(volumeSize, sizeof(float));
     //
     // // Execute on the device
