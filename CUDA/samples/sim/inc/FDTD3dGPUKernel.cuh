@@ -67,114 +67,37 @@ __global__ void AudioKernel(
 
   int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
+  //PRESSURE------------------------------
+
   float p_current = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
   float p_right = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_X);
   float p_down = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_Y);
-
   p[i] = p_current;
 
+  //VB------------------------------
   //TODO: not sure if this is supposed to be previous or next pressure
   float delta_p = max(P_MOUTH - p_prev[p_bore_index], 0.0f);
-
   float vb_x = 0;
   float vb_y = 0;
-
-
   int wall = getWall(aux, i);
   int excitor = getExcitor(aux, i);
   int wall_down = getWall(aux, i + STRIDE_Y);
   vb_x = excitor * (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
   vb_y = wall * ADMITTANCE * p_current + wall_down * -ADMITTANCE * p_down;
 
+  //VELOCITY------------------------------
+  int beta_current = getBeta(aux, i);
 
+  float beta_x = min(beta_current, getBeta(aux, i + STRIDE_X));
+  float grad_x = p_right - p_current;
+  float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
+  v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
 
-  //
-  // float beta_x = min(beta[i], beta[i + STRIDE_X]);
-  // float grad_x = p[i + STRIDE_X] - p[i];
-  // float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
-  // v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
-  //
-  // float beta_y = min(beta[i], beta[i + STRIDE_Y]);
-  // float grad_y = p[i + STRIDE_Y] - p[i];
-  // float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
-  // v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
-
-
-
-
-
-
-//   __shared__ float p_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
-//   __shared__ float vx_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
-//   __shared__ float vy_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
-//
-//   p_tile[i+1][j+1] = p_in[idx + PAD_HALF][idy + PAD_HALF];
-//
-//
-// __syncthreads();
-
-
-  // int i = (idx + PAD_HALF) + (idy + PAD_HALF) * STRIDE_Y;
-  //
-  // //need to load entire halo
-  //
-  //
-  //
-  //
-  //
-  //
-  //   // gradient
-  // float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
-  // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
-  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
-  //
-  //
-  // float delta_p = P_MOUTH - p[p_bore_index];
-  // float vb_x = 0;
-  // float vb_y = 0;
-  //
-  // //check if wall
-  // if(excitor[i] && delta_p > 0){
-  //   vb_x = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
-  // }
-  // else if(walls[i]){
-  //   vb_y = ADMITTANCE * p[i];
-  // }
-  // else if(walls[i + STRIDE_Y]){
-  //   vb_y = -ADMITTANCE * p[i + STRIDE_Y];
-  // }
-  //
-  // float beta_x = min(beta[i], beta[i + STRIDE_X]);
-  // float grad_x = p[i + STRIDE_X] - p[i];
-  // float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
-  // v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
-  //
-  // float beta_y = min(beta[i], beta[i + STRIDE_Y]);
-  // float grad_y = p[i + STRIDE_Y] - p[i];
-  // float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
-  // v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
-
-
-
-
-
-
-
+  float beta_y = min(beta_current, getBeta(aux, i + STRIDE_Y));
+  float grad_y = p_down - p[i];
+  float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
+  v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Note: If you change the RADIUS, you should also change the unrolling below
