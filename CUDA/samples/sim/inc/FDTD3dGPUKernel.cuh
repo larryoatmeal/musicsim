@@ -22,7 +22,7 @@ __global__ void AudioKernel(
   float *vy_out,
   float *p_out,
   int *aux,
-  float *sigma,
+  float *sigma
 )
 {
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
