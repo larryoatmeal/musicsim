@@ -95,6 +95,26 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
   checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, size, cudaMemcpyHostToDevice));
 
 
+  dimBlock.x = 16;
+  dimBlock.y = 16
+  dimGrid.x  = W/dimBlock.x;
+  dimGrid.y  = H/dimBlock.y; //for now assume this is perfect division
+  printf(" set block size to %dx%d\n", dimBlock.x, dimBlock.y);
+  printf(" set grid size to %dx%d\n", dimGrid.x, dimGrid.y);
+
+
+  for (int it = 0 ; it < timesteps ; it++)
+  {
+      printf("\tt = %d ", it);
+
+      // Launch the kernel
+      printf("launch kernel\n");
+      // FiniteDifferencesKernel<<<dimGrid, dimBlock>>>(bufferDst, bufferSrc, dimx, dimy, dimz);
+
+      std::swap<float *>(bufferP_in, bufferP_out);
+      std::swap<float *>(bufferVx_in, bufferVx_out);
+      std::swap<float *>(bufferVy_in, bufferVy_out);
+  }
 
 
 
