@@ -15,21 +15,21 @@
 namespace cg = cooperative_groups;
 
 
-_device int getBeta(
+__device__ int getBeta(
 int *aux,
 int i
 ){
   return max(aux[i] & (1 << 0), 1);
 }
 
-_device void getExcitor(
+__device__ void getExcitor(
 int *aux,
 int i
 ){
   return max(aux[i] & (1 << 1), 1);
 }
 
-_device void getWall(
+__device__ void getWall(
 int *aux,
 int i
 ){
