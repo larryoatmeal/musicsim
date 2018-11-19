@@ -73,7 +73,7 @@ number* alloc_grid(){
   return (number *)calloc(N_TOTAL, sizeof(float));
 }
 
-void init(number *walls, number *excitor, number *beta, number *sigma){
+void init(number *walls, number *excitor, number *beta, number *sigma, int *aux_cells){
     //walls
 
     for(int i = 40; i < 150; i++){
