@@ -126,8 +126,8 @@ bool runTest(int argc, const char **argv)
 
 
 
-
-    int *aux_cells;
+    //todo fix
+    int *aux_cells = (int *)calloc(N_TOTAL, sizeof(int));
 
     free(beta);
     free(sigma);

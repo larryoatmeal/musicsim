@@ -73,8 +73,6 @@ bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, c
   targetDevice = findCudaDevice(argc, (const char **)argv);
 
   checkCudaErrors(cudaSetDevice(targetDevice));
-
-
   // Allocate memory buffers
 
   int size = N_TOTAL * sizeof(float);

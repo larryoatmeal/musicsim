@@ -27,6 +27,51 @@ __global__ void AudioKernel(
 {
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
   int idy=blockIdx.y*blockDim.y+threadIdx.y;
+  
+  // int i = (idx + PAD_HALF) + (idy + PAD_HALF) * STRIDE_Y;
+  //
+  // //need to load entire halo
+  //
+  //
+  //
+  //
+  //
+  //
+  //   // gradient
+  // number divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
+  // number p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
+  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+  //
+  //
+  // number delta_p = P_MOUTH - p[p_bore_index];
+  // number vb_x = 0;
+  // number vb_y = 0;
+  //
+  // //check if wall
+  // if(excitor[i] && delta_p > 0){
+  //   vb_x = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
+  // }
+  // else if(walls[i]){
+  //   vb_y = ADMITTANCE * p[i];
+  // }
+  // else if(walls[i + STRIDE_Y]){
+  //   vb_y = -ADMITTANCE * p[i + STRIDE_Y];
+  // }
+  //
+  // number beta_x = min(beta[i], beta[i + STRIDE_X]);
+  // number grad_x = p[i + STRIDE_X] - p[i];
+  // number sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
+  // v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
+  //
+  // number beta_y = min(beta[i], beta[i + STRIDE_Y]);
+  // number grad_y = p[i + STRIDE_Y] - p[i];
+  // number sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
+  // v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
+
+
+
+
+
 
 
 }
