@@ -122,7 +122,7 @@ bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, c
         bufferVy_out,
         bufferAux_in,
         buffersSigma_in
-      )
+      );
       std::swap<float *>(bufferP_in, bufferP_out);
       std::swap<float *>(bufferVx_in, bufferVx_out);
       std::swap<float *>(bufferVy_in, bufferVy_out);
