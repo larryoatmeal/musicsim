@@ -96,7 +96,7 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
 
 
   dimBlock.x = 16;
-  dimBlock.y = 16
+  dimBlock.y = 16;
   dimGrid.x  = W/dimBlock.x;
   dimGrid.y  = H/dimBlock.y; //for now assume this is perfect division
   printf(" set block size to %dx%d\n", dimBlock.x, dimBlock.y);
