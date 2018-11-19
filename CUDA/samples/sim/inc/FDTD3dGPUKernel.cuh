@@ -19,21 +19,21 @@ __device__ int getBeta(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 0), 1);
+  return min(aux[i] & (1 << 0), 1);
 }
 
 __device__ int getExcitor(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 1), 1);
+  return min(aux[i] & (1 << 1), 1);
 }
 
 __device__ int getWall(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 2), 1);
+  return min(aux[i] & (1 << 2), 1);
 }
 
 __device__ float pressureStep(
@@ -67,29 +67,25 @@ __global__ void AudioKernel(
 
   int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
-  p[i] = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
+  p_current = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
+  p_right = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_X);
+  p_down = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_Y);
 
-  // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
-  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
-  //
+  p[i] = current;
+
+  float delta_p = max(P_MOUTH - p[p_bore_index], 0);
+  float vb_x = 0;
+  float vb_y = 0;
+
+
+  int wall = getWall(aux, i);
+  int excitor = getExcitor(aux, i);
+  int wall_down = getWall(aux, i + STRIDE_Y);
+  vb_x = excitor * (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
+  vb_y = wall * ADMITTANCE * p_current + wall_down * -ADMITTANCE * p_down;
 
 
 
-
-  // float delta_p = P_MOUTH - p[p_bore_index];
-  // float vb_x = 0;
-  // float vb_y = 0;
-  //
-  // //check if wall
-  // if(excitor[i] && delta_p > 0){
-  //   vb_x = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
-  // }
-  // else if(walls[i]){
-  //   vb_y = ADMITTANCE * p[i];
-  // }
-  // else if(walls[i + STRIDE_Y]){
-  //   vb_y = -ADMITTANCE * p[i + STRIDE_Y];
-  // }
   //
   // float beta_x = min(beta[i], beta[i + STRIDE_X]);
   // float grad_x = p[i + STRIDE_X] - p[i];
