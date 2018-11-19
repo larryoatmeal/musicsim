@@ -14,6 +14,43 @@
 
 namespace cg = cooperative_groups;
 
+
+_device int getBeta(
+int *aux,
+int i
+){
+  return max(aux[i] & (1 << 0), 1)
+}
+
+_device void getExcitor(
+int *aux,
+int i
+){
+  return max(aux[i] & (1 << 1), 1)
+}
+
+_device void getWall(
+int *aux,
+int i
+){
+  return max(aux[i] & (1 << 2), 1)
+}
+
+__device__ void pressureStep(
+  float *v_x_prev,
+  float *v_y_prev,
+  float *p_prev,
+  int *aux,
+  float *sigma,
+  int i
+)
+{
+  float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
+  float p_denom = 1 + (1 - getBeta(aux, i) + sigma[i]) * DT;
+  return (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+}
+
+
 __global__ void AudioKernel(
   float *v_x_prev,
   float *v_y_prev,
@@ -30,12 +67,12 @@ __global__ void AudioKernel(
 
   let i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
-
-  float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
+  p[i] = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
+  
   // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
   // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
   //
-  
+
 
 
 
