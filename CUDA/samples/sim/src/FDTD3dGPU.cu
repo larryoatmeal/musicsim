@@ -43,7 +43,7 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
     return true;
 }
 
-bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, const char **argv)
+bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, const int argc, const char **argv)
 {
   int               deviceCount  = 0;
   int               targetDevice = 0;
@@ -56,7 +56,10 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
   float            *bufferVx_out     = 0;
   float            *bufferVy_out     = 0;
 
-  float            *bufferAux_in     = 0;
+  float            *buffersSigma_in     = 0;
+
+  int             *bufferAux_in     = 0;
+
 
 
   float * empty = (float *) calloc(N_TOTAL, sizeof(float));
@@ -82,7 +85,8 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
   checkCudaErrors(cudaMalloc((void **)&bufferP_out,  size));
   checkCudaErrors(cudaMalloc((void **)&bufferVx_out, size));
   checkCudaErrors(cudaMalloc((void **)&bufferVy_out, size));
-  checkCudaErrors(cudaMalloc((void **)&bufferAux_in, size));
+  checkCudaErrors(cudaMalloc((void **)&buffersSigma_in, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferAux_in, N_TOTAL * sizeof(int)));
 
   checkCudaErrors(cudaMemcpy(bufferP_in, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferVx_in, empty, size, cudaMemcpyHostToDevice));
@@ -90,9 +94,8 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
   checkCudaErrors(cudaMemcpy(bufferP_out, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferVx_out, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
-  checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
-
-  checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(buffersSigma_in, sigma, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, N_TOTAL * sizeof(int)), cudaMemcpyHostToDevice));
 
 
   dimBlock.x = 16;
@@ -110,7 +113,16 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
       // Launch the kernel
       printf("launch kernel\n");
       // FiniteDifferencesKernel<<<dimGrid, dimBlock>>>(bufferDst, bufferSrc, dimx, dimy, dimz);
-
+      AudioKernel<<<dimGrid, dimBlock>>(
+        bufferP_in,
+        bufferVx_in,
+        bufferVy_in,
+        bufferP_out,
+        bufferVx_out,
+        bufferVy_out,
+        bufferAux_in,
+        buffersSigma_in
+      )
       std::swap<float *>(bufferP_in, bufferP_out);
       std::swap<float *>(bufferVx_in, bufferVx_out);
       std::swap<float *>(bufferVy_in, bufferVy_out);

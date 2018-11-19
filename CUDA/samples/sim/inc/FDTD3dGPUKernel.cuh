@@ -14,10 +14,54 @@
 
 namespace cg = cooperative_groups;
 
+__global__ void AudioKernel(
+  float *vx_in,
+  float *vy_in,
+  float *p_in,
+  float *vx_out,
+  float *vy_out,
+  float *p_out,
+  int *aux,
+  float *sigma,
+)
+{
+  int idx=blockIdx.x*blockDim.x+threadIdx.x;
+  int idy=blockIdx.y*blockDim.y+threadIdx.y;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Note: If you change the RADIUS, you should also change the unrolling below
 #define RADIUS 4
 
 __constant__ float stencil[RADIUS + 1];
+
+
+
+
+
+
+
+
+
+
+
+
 
 __global__ void FiniteDifferencesKernel(float *output,
                                         const float *input,
