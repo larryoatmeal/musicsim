@@ -103,6 +103,11 @@ void init(number *walls, number *excitor, number *beta, number *sigma){
       }
     }
 
+    for(int i = 0; i < N_TOTAL; i++){
+      aux_cells[i] = (walls[i] << 2) + (excitor[i] << 1) + beta[i];
+    }
+
+
 }
 
 
@@ -112,8 +117,9 @@ bool runTest(int argc, const char **argv)
     number *excitor = alloc_grid();
     number *beta = alloc_grid();
     number *sigma = alloc_grid();
+    int *aux_cells = (int *)calloc(N_TOTAL, sizeof(int));
 
-    init(walls, excitor, beta, sigma);
+    init(walls, excitor, beta, sigma, aux_cells);
 
 
     number *p = alloc_grid();
@@ -127,7 +133,6 @@ bool runTest(int argc, const char **argv)
 
 
     //todo fix
-    int *aux_cells = (int *)calloc(N_TOTAL, sizeof(int));
 
     free(beta);
     free(sigma);

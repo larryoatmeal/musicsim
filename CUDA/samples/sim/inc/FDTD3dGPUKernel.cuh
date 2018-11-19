@@ -15,37 +15,33 @@
 namespace cg = cooperative_groups;
 
 __global__ void AudioKernel(
-  float *vx_in,
-  float *vy_in,
-  float *p_in,
-  float *vx_out,
-  float *vy_out,
-  float *p_out,
+  float *v_x_prev,
+  float *v_y_prev,
+  float *p_prev,
+  float *v_x,
+  float *v_y,
+  float *p,
   int *aux,
   float *sigma
 )
 {
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
   int idy=blockIdx.y*blockDim.y+threadIdx.y;
-  
-  // int i = (idx + PAD_HALF) + (idy + PAD_HALF) * STRIDE_Y;
-  //
-  // //need to load entire halo
-  //
-  //
-  //
-  //
-  //
-  //
-  //   // gradient
-  // number divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
-  // number p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
-  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
-  //
-  //
-  // number delta_p = P_MOUTH - p[p_bore_index];
-  // number vb_x = 0;
-  // number vb_y = 0;
+
+  let i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
+
+
+  float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
+  float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
+  p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+
+
+
+
+
+  // float delta_p = P_MOUTH - p[p_bore_index];
+  // float vb_x = 0;
+  // float vb_y = 0;
   //
   // //check if wall
   // if(excitor[i] && delta_p > 0){
@@ -58,14 +54,69 @@ __global__ void AudioKernel(
   //   vb_y = -ADMITTANCE * p[i + STRIDE_Y];
   // }
   //
-  // number beta_x = min(beta[i], beta[i + STRIDE_X]);
-  // number grad_x = p[i + STRIDE_X] - p[i];
-  // number sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
+  // float beta_x = min(beta[i], beta[i + STRIDE_X]);
+  // float grad_x = p[i + STRIDE_X] - p[i];
+  // float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
   // v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
   //
-  // number beta_y = min(beta[i], beta[i + STRIDE_Y]);
-  // number grad_y = p[i + STRIDE_Y] - p[i];
-  // number sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
+  // float beta_y = min(beta[i], beta[i + STRIDE_Y]);
+  // float grad_y = p[i + STRIDE_Y] - p[i];
+  // float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
+  // v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
+
+
+
+
+
+
+//   __shared__ float p_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
+//   __shared__ float vx_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
+//   __shared__ float vy_tile[16 + 2 * PAD_HALF][16 + 2 * PAD_HALF];
+//
+//   p_tile[i+1][j+1] = p_in[idx + PAD_HALF][idy + PAD_HALF];
+//
+//
+// __syncthreads();
+
+
+  // int i = (idx + PAD_HALF) + (idy + PAD_HALF) * STRIDE_Y;
+  //
+  // //need to load entire halo
+  //
+  //
+  //
+  //
+  //
+  //
+  //   // gradient
+  // float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
+  // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
+  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+  //
+  //
+  // float delta_p = P_MOUTH - p[p_bore_index];
+  // float vb_x = 0;
+  // float vb_y = 0;
+  //
+  // //check if wall
+  // if(excitor[i] && delta_p > 0){
+  //   vb_x = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
+  // }
+  // else if(walls[i]){
+  //   vb_y = ADMITTANCE * p[i];
+  // }
+  // else if(walls[i + STRIDE_Y]){
+  //   vb_y = -ADMITTANCE * p[i + STRIDE_Y];
+  // }
+  //
+  // float beta_x = min(beta[i], beta[i + STRIDE_X]);
+  // float grad_x = p[i + STRIDE_X] - p[i];
+  // float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
+  // v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
+  //
+  // float beta_y = min(beta[i], beta[i + STRIDE_Y]);
+  // float grad_y = p[i + STRIDE_Y] - p[i];
+  // float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
   // v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
 
 
