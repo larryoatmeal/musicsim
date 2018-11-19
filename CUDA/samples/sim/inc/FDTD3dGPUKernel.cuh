@@ -68,7 +68,7 @@ __global__ void AudioKernel(
   let i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
   p[i] = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
-  
+
   // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
   // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
   //
