@@ -141,7 +141,7 @@ bool runTest(int argc, const char **argv)
     //
     // // Execute on the device
     printf("fdtdGPU...\n");
-    fdtdMine(aux_cells, 100);
+    fdtdGPUMine(aux_cells, 100);
     // printf("fdtdGPU complete\n");
 
     return 0;
