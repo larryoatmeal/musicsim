@@ -19,21 +19,21 @@ _device int getBeta(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 0), 1)
+  return max(aux[i] & (1 << 0), 1);
 }
 
 _device void getExcitor(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 1), 1)
+  return max(aux[i] & (1 << 1), 1);
 }
 
 _device void getWall(
 int *aux,
 int i
 ){
-  return max(aux[i] & (1 << 2), 1)
+  return max(aux[i] & (1 << 2), 1);
 }
 
 __device__ void pressureStep(
