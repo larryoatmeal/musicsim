@@ -89,10 +89,6 @@ void init(number *walls, number *excitor, number *beta, number *sigma){
       excitor[index_of_padded(40, i)] = 1;
     }
 
-    p_bore_index = index_of_padded(41, 53);
-    listen_index = index_of_padded(45, 155);
-
-
     //beta
     for(int i = 0; i < N_TOTAL; i++){
       beta[i] = 1 - (walls[i] + excitor[i]);
@@ -111,7 +107,7 @@ void init(number *walls, number *excitor, number *beta, number *sigma){
 
 
 bool runTest(int argc, const char **argv)
-{  
+{
     number *walls = alloc_grid();
     number *excitor = alloc_grid();
     number *beta = alloc_grid();
