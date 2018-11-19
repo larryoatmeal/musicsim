@@ -67,13 +67,15 @@ __global__ void AudioKernel(
 
   int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
 
-  p_current = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
-  p_right = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_X);
-  p_down = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_Y);
+  float p_current = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i);
+  float p_right = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_X);
+  float p_down = pressureStep(v_x_prev, v_y_prev, p_prev, aux, sigma, i + STRIDE_Y);
 
   p[i] = current;
 
-  float delta_p = max(P_MOUTH - p[p_bore_index], 0);
+  //TODO: not sure if this is supposed to be previous or next pressure
+  float delta_p = max(P_MOUTH - p_prev[p_bore_index], 0.0f);
+  
   float vb_x = 0;
   float vb_y = 0;
 
