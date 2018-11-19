@@ -9,25 +9,26 @@
  *
  */
 
-#ifndef _FDTD3DGPU_H_
-#define _FDTD3DGPU_H_
+ #ifndef _FDTD3DGPU_H_
+ #define _FDTD3DGPU_H_
 
-#include <cstddef>
-#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64) && defined(_MSC_VER)
-typedef unsigned __#define64 memsize_t
-#else
-#include <stdint.h>
-typedef u#define64_t memsize_t
-#endif
+ #include <cstddef>
+ #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64) && defined(_MSC_VER)
+ typedef unsigned __int64 memsize_t;
+ #else
+ #include <stdint.h>
+ typedef uint64_t memsize_t;
+ #endif
 
-#define k_blockDimX    32
-#define k_blockDimMaxY 16
-#define k_blockSizeMin 128
-#define k_blockSizeMax (k_blockDimX * k_blockDimMaxY)
+ #define k_blockDimX    32
+ #define k_blockDimMaxY 16
+ #define k_blockSizeMin 128
+ #define k_blockSizeMax (k_blockDimX * k_blockDimMaxY)
 
-bool getTargetDeviceGlobalMemSize(memsize_t *result, const #define argc, const char **argv)
-bool fdtdGPU(float *output, const float *input, const float *coeff, const #define dimx, const #define dimy, const #define dimz, const #define radius, const #define timesteps, const #define argc, const char **argv)
+ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char **argv);
+ bool fdtdGPU(float *output, const float *input, const float *coeff, const int dimx, const int dimy, const int dimz, const int radius, const int timesteps, const int argc, const char **argv);
 
+ #endif
 
 
 
@@ -75,10 +76,10 @@ bool fdtdGPU(float *output, const float *input, const float *coeff, const #defin
 #define W  256
 #define H  128
 
-#define RADIUS 1
+#define PAD_HALF 1
 
-#define W_PADDED (W + 2 * RADIUS)
-#define H_PADDED (H + 2 * RADIUS)
+#define W_PADDED (W + 2 * PAD_HALF)
+#define H_PADDED (H + 2 * PAD_HALF)
 
 #define STRIDE_Y (W_PADDED)
 #define STRIDE_X 1
@@ -86,7 +87,7 @@ bool fdtdGPU(float *output, const float *input, const float *coeff, const #defin
 
 #define N_TOTAL (W_PADDED * H_PADDED)
 
-#define p_bore_index  (41 + RADIUS) + (53 + RADIUS) * (STRIDE_Y)
+#define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
 #define num_excite  3
 // #define listen_index  (45 + RADIUS) + (155 + RADIUS) * (STRIDE_Y)
 
