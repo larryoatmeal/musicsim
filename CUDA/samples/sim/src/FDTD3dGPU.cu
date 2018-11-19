@@ -59,7 +59,7 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, con
   float            *bufferAux_in     = 0;
 
 
-  float * empty = calloc(N_TOTAL, sizeof(float))
+  float * empty = (float *) calloc(N_TOTAL, sizeof(float));
 
   dim3              dimBlock;
   dim3              dimGrid;
