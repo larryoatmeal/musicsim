@@ -35,9 +35,9 @@ __global__ void AudioKernel(
   // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
   // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
   //
-
-
   
+
+
 
   // float delta_p = P_MOUTH - p[p_bore_index];
   // float vb_x = 0;

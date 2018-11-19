@@ -134,6 +134,16 @@ bool runTest(int argc, const char **argv)
 
     //todo fix
 
+
+    // device_output = (float *)calloc(volumeSize, sizeof(float));
+    //
+    // // Execute on the device
+    printf("fdtdGPU...\n");
+    fdtdGPUMine(sigma, aux_cells, 100, argc, argv);
+    // printf("fdtdGPU complete\n");
+
+
+
     free(beta);
     free(sigma);
     free(p);
@@ -142,12 +152,5 @@ bool runTest(int argc, const char **argv)
     free(p_prev);
     free(v_x_prev);
     free(v_y_prev);
-    // device_output = (float *)calloc(volumeSize, sizeof(float));
-    //
-    // // Execute on the device
-    printf("fdtdGPU...\n");
-    fdtdGPUMine(sigma, aux_cells, 100, argc, argv);
-    // printf("fdtdGPU complete\n");
-
     return 0;
 }
