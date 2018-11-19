@@ -139,7 +139,7 @@ bool runTest(int argc, const char **argv)
     //
     // // Execute on the device
     printf("fdtdGPU...\n");
-    fdtdGPUMine(sigma, aux_cells, 100, argc, argv);
+    fdtdGPUMine(sigma, aux_cells, 128000, argc, argv);
     // printf("fdtdGPU complete\n");
 
 

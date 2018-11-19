@@ -105,10 +105,12 @@ bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, c
 
   for (int it = 0 ; it < timesteps ; it++)
   {
-      printf("\tt = %d ", it);
+      if(it % 1000 == 0){
+        printf("\tt = %d ", it);
+      }
 
       // Launch the kernel
-      printf("launch kernel\n");
+      // printf("launch kernel\n");
       // FiniteDifferencesKernel<<<dimGrid, dimBlock>>>(bufferDst, bufferSrc, dimx, dimy, dimz);
       AudioKernel<<<dimGrid, dimBlock>>>(
         bufferP_in,
