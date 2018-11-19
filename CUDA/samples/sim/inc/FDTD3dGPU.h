@@ -16,7 +16,7 @@
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64) && defined(_MSC_VER)
 typedef unsigned __#define64 memsize_t
 #else
-#include <std#define.h>
+#include <stdint.h>
 typedef u#define64_t memsize_t
 #endif
 
