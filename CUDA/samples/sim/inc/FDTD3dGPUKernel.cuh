@@ -32,12 +32,12 @@ __global__ void AudioKernel(
 
 
   float divergence = v_x_prev[i] - v_x_prev[i - STRIDE_X] + v_y_prev[i] - v_y_prev[i - STRIDE_Y];
-  float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
-  p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+  // float p_denom = 1 + (1 - beta[i] + sigma[i]) * DT;
+  // p[i] = (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
+  //
 
 
-
-
+  
 
   // float delta_p = P_MOUTH - p[p_bore_index];
   // float vb_x = 0;
