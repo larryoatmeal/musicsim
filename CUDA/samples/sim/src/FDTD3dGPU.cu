@@ -45,8 +45,70 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
 
 bool fdtdGPUMine(const float *aux_data, const int timesteps)
 {
+  int               deviceCount  = 0;
+  int               targetDevice = 0;
+
+  float            *bufferP_in      = 0;
+  float            *bufferVx_in     = 0;
+  float            *bufferVy_in     = 0;
+
+  float            *bufferP_out      = 0;
+  float            *bufferVx_out     = 0;
+  float            *bufferVy_out     = 0;
+
+  float            *bufferAux_in     = 0;
 
 
+  float * empty = calloc(N_TOTAL, sizeof(float))
+
+  dim3              dimBlock;
+  dim3              dimGrid;
+
+  checkCudaErrors(cudaGetDeviceCount(&deviceCount));
+
+  // Select target device (device 0 by default)
+  targetDevice = findCudaDevice(argc, (const char **)argv);
+
+  checkCudaErrors(cudaSetDevice(targetDevice));
+
+
+  // Allocate memory buffers
+
+  int size = N_TOTAL * sizeof(float);
+
+  checkCudaErrors(cudaMalloc((void **)&bufferP_in, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferVx_in, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferVy_in, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferP_out,  size));
+  checkCudaErrors(cudaMalloc((void **)&bufferVx_out, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferVy_out, size));
+  checkCudaErrors(cudaMalloc((void **)&bufferAux_in, size));
+
+  checkCudaErrors(cudaMemcpy(bufferP_in, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferVx_in, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferVy_in, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferP_out, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferVx_out, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
+  
+  checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, size, cudaMemcpyHostToDevice));
+
+
+
+
+
+  //free
+  checkCudaErrors(cudaFree(bufferP_in));
+  checkCudaErrors(cudaFree(bufferVx_in));
+  checkCudaErrors(cudaFree(bufferVy_in));
+  checkCudaErrors(cudaFree(bufferP_out));
+  checkCudaErrors(cudaFree(bufferVx_out));
+  checkCudaErrors(cudaFree(bufferVy_out));
+  checkCudaErrors(cudaFree(bufferAux_in));
+
+
+  return true;
 }
 
 
