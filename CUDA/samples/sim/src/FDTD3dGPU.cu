@@ -43,7 +43,7 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
     return true;
 }
 
-bool fdtdGPUMine(const float *aux_data, const int timesteps)
+bool fdtdGPUMine(const float *aux_data, const int timesteps, const int argc, const char **argv)
 {
   int               deviceCount  = 0;
   int               targetDevice = 0;
@@ -91,7 +91,7 @@ bool fdtdGPUMine(const float *aux_data, const int timesteps)
   checkCudaErrors(cudaMemcpy(bufferVx_out, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
-  
+
   checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, size, cudaMemcpyHostToDevice));
 
 
