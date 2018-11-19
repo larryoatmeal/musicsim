@@ -104,7 +104,7 @@ void init(number *walls, number *excitor, number *beta, number *sigma, int *aux_
     }
 
     for(int i = 0; i < N_TOTAL; i++){
-      aux_cells[i] = (walls[i] << 2) + (excitor[i] << 1) + beta[i];
+      aux_cells[i] = ( (int) walls[i] << 2) + ( (int) excitor[i] << 1) + (int) beta[i];
     }
 
 
