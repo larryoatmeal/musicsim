@@ -193,8 +193,8 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
       float error = 0;
 
       for(int i = 0; i < N_TOTAL; i++){
-        printf("\tGPU = %f ", output_from_gpu[i]);
-        printf("\tRef = %f ", p_prev[i]);
+        // printf("\tGPU = %f ", output_from_gpu[i]);
+        // printf("\tRef = %f ", p_prev[i]);
 
         error += abs(output_from_gpu[i] - p_prev[i]);
       }
