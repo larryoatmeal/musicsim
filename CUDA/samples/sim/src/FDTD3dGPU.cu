@@ -156,6 +156,15 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
         bufferAux_in,
         buffersSigma_in
       );
+      // check for error
+        cudaError_t error = cudaGetLastError();
+        if(error != cudaSuccess)
+        {
+            // print the CUDA error message and exit
+            printf("CUDA error: %s\n", cudaGetErrorString(error));
+            exit(-1);
+        }
+
       std::swap<float *>(bufferP_in, bufferP_out);
       std::swap<float *>(bufferVx_in, bufferVx_out);
       std::swap<float *>(bufferVy_in, bufferVy_out);
