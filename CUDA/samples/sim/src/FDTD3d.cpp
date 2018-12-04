@@ -21,7 +21,6 @@
 
 #include <math.h>
 #include <assert.h>
-#include "Reference.h"
 #ifndef CLAMP
 #define CLAMP(a, min, max) ( MIN(max, MAX(a, min)) )
 #endif
