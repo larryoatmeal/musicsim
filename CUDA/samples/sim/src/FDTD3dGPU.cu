@@ -17,6 +17,7 @@
 #include <helper_cuda.h>
 #include "Reference.h"
 #include "FDTD3dGPUKernel.cuh"
+#include <stdlib.h>
 
 bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char **argv)
 {
@@ -133,6 +134,9 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
   printf(" set grid size to %dx%d\n", dimGrid.x, dimGrid.y);
 
 
+  float * output_from_gpu = (float *) calloc(N_TOTAL, sizeof(float));
+
+
   for (int it = 0 ; it < timesteps ; it++)
   {
       if(it % 1000 == 0){
@@ -143,12 +147,12 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
       // printf("launch kernel\n");
       // FiniteDifferencesKernel<<<dimGrid, dimBlock>>>(bufferDst, bufferSrc, dimx, dimy, dimz);
       AudioKernel<<<dimGrid, dimBlock>>>(
-        bufferP_in,
         bufferVx_in,
         bufferVy_in,
-        bufferP_out,
+        bufferP_in,
         bufferVx_out,
         bufferVy_out,
+        bufferP_out,
         bufferAux_in,
         buffersSigma_in
       );
@@ -167,18 +171,34 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
         aux_data,
         sigma
       );
-      std::swap<float *>(p, p_prev);
-      std::swap<float *>(v_x, v_x_prev);
-      std::swap<float *>(v_y, v_y_prev);
+      std::swap<float *>(p_prev, p);
+      std::swap<float *>(v_x_prev, v_x);
+      std::swap<float *>(v_y_prev, v_y);
+
+
+      // Wait for the kernel to complete
+      checkCudaErrors(cudaDeviceSynchronize());
+      // Read the result back, result is in bufferP_in (after final toggle)
+      checkCudaErrors(cudaMemcpy(output_from_gpu, bufferP_in, size, cudaMemcpyDeviceToHost));
+
+      float error = 0;
+
+      for(int i = 0; i < N_TOTAL; i++){
+        error += abs(output_from_gpu[i] - p_prev[i]);
+      }
+      
+      printf("\tError = %f ", error);
+
+
+
+      //compare this with the reference which is in p_prev at this point
+
   }
 
 
 
 
-//   // Wait for the kernel to complete
-//   checkCudaErrors(cudaDeviceSynchronize());
-//   // Read the result back, result is in bufferSrc (after final toggle)
-//   checkCudaErrors(cudaMemcpy(output, bufferP_in, size, cudaMemcpyDeviceToHost));
+  
 
 
   //free
