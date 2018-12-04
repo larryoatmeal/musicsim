@@ -51,7 +51,7 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
     number *excitor;
     number *beta;
     number *sigma;
-    int *aux_cells;
+    int *aux_data;
     number *p;
     number *v_x;
     number *v_y;
@@ -64,7 +64,7 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
       excitor,
       beta,
       sigma,
-      aux_cells,
+      aux_data,
       p,
       v_x,
       v_y,
@@ -158,18 +158,15 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
 
       //REFERENCE IMPLEMENTATION
       ReferenceSim::Reference(
-        walls,
-        excitor,
-        beta,
-        sigma,
-        aux_cells,
-        p,
+        v_x_prev,
+        v_y_prev,
+        p_prev,
         v_x,
         v_y,
-        p_prev,
-        v_x_prev,
-        v_y_prev
-      )
+        p,
+        aux_data,
+        sigma
+      );
       std::swap<float *>(p, p_prev);
       std::swap<float *>(v_x, v_x_prev);
       std::swap<float *>(v_y, v_y_prev);

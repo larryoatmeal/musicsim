@@ -173,9 +173,7 @@ void Reference(
   float *v_y,
   float *p,
   int *aux,
-  float *sigma,
-  int idx,
-  int idy
+  float *sigma
 ){
     for(int x = 0; x < W; x++){
         for(int y = 0; y < H; y++){

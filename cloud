@@ -1,0 +1,1 @@
+gcloud compute --project "durable-surfer-109521" ssh --zone "us-central1-c" "sim"
