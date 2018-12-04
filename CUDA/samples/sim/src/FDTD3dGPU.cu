@@ -157,11 +157,11 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
         buffersSigma_in
       );
       // check for error
-        cudaError_t error = cudaGetLastError();
-        if(error != cudaSuccess)
+        cudaError_t err = cudaGetLastError();
+        if(err != cudaSuccess)
         {
             // print the CUDA error message and exit
-            printf("CUDA error: %s\n", cudaGetErrorString(error));
+            printf("CUDA error: %s\n", cudaGetErrorString(err));
             exit(-1);
         }
 
