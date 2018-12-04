@@ -47,30 +47,30 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
 
 bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
 {
-    number *walls;
-    number *excitor;
-    number *beta;
-    number *sigma;
-    int *aux_data;
-    number *p;
-    number *v_x;
-    number *v_y;
-    number *p_prev;
-    number *v_x_prev;
-    number *v_y_prev; 
+    number *walls = 0;
+    number *excitor = 0;
+    number *beta = 0;
+    number *sigma = 0;
+    int *aux_data = 0;
+    number *p = 0;
+    number *v_x = 0;
+    number *v_y = 0;
+    number *p_prev = 0;
+    number *v_x_prev = 0;
+    number *v_y_prev = 0; 
 
     ReferenceSim::genInitialState(
-      walls,
-      excitor,
-      beta,
-      sigma,
-      aux_data,
-      p,
-      v_x,
-      v_y,
-      p_prev,
-      v_x_prev,
-      v_y_prev
+      &walls,
+      &excitor,
+      &beta,
+      &sigma,
+      &aux_data,
+      &p,
+      &v_x,
+      &v_y,
+      &p_prev,
+      &v_x_prev,
+      &v_y_prev
     );
 
 

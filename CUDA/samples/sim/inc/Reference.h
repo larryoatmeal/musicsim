@@ -85,33 +85,33 @@ void init(number *walls, number *excitor, number *beta, number *sigma, int *aux_
 
 
 void genInitialState(
-number *walls ,
-number *excitor ,
-number *beta ,
-number *sigma ,
-int *aux_cells,
-number *p ,
-number *v_x ,
-number *v_y ,
-number *p_prev ,
-number *v_x_prev ,
-number *v_y_prev 
+number **walls ,
+number **excitor ,
+number **beta ,
+number **sigma ,
+int **aux_cells,
+number **p ,
+number **v_x ,
+number **v_y ,
+number **p_prev ,
+number **v_x_prev ,
+number **v_y_prev 
 ){
-    walls = alloc_grid();
-    excitor = alloc_grid();
-    beta = alloc_grid();
-    sigma = alloc_grid();
-    aux_cells = (int *)calloc(N_TOTAL, sizeof(int));
+    *walls = alloc_grid();
+    *excitor = alloc_grid();
+    *beta = alloc_grid();
+    *sigma = alloc_grid();
+    *aux_cells = (int *)calloc(N_TOTAL, sizeof(int));
 
-    init(walls, excitor, beta, sigma, aux_cells);
+    init(*walls, *excitor, *beta, *sigma, *aux_cells);
 
-    p = alloc_grid();
-    v_x = alloc_grid();
-    v_y = alloc_grid();
+    *p = alloc_grid();
+    *v_x = alloc_grid();
+    *v_y = alloc_grid();
 
-    p_prev = alloc_grid();
-    v_x_prev = alloc_grid();
-    v_y_prev = alloc_grid();
+    *p_prev = alloc_grid();
+    *v_x_prev = alloc_grid();
+    *v_y_prev = alloc_grid();
 }
 
 
