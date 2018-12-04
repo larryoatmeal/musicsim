@@ -99,7 +99,6 @@ __global__ void AudioKernel(
   v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
 }
 
-
 // Note: If you change the RADIUS, you should also change the unrolling below
 #define RADIUS 4
 

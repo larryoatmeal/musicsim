@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <helper_functions.h>
 #include <helper_cuda.h>
-
+#include "Reference.h"
 #include "FDTD3dGPUKernel.cuh"
 
 bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char **argv)
@@ -43,8 +43,38 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
     return true;
 }
 
-bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, const int argc, const char **argv)
+
+
+bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
 {
+    number *walls;
+    number *excitor;
+    number *beta;
+    number *sigma;
+    int *aux_cells;
+    number *p;
+    number *v_x;
+    number *v_y;
+    number *p_prev;
+    number *v_x_prev;
+    number *v_y_prev; 
+
+    ReferenceSim::genInitialState(
+      walls,
+      excitor,
+      beta,
+      sigma,
+      aux_cells,
+      p,
+      v_x,
+      v_y,
+      p_prev,
+      v_x_prev,
+      v_y_prev
+    );
+
+
+
   int               deviceCount  = 0;
   int               targetDevice = 0;
 
@@ -125,8 +155,33 @@ bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, c
       std::swap<float *>(bufferP_in, bufferP_out);
       std::swap<float *>(bufferVx_in, bufferVx_out);
       std::swap<float *>(bufferVy_in, bufferVy_out);
+
+      //REFERENCE IMPLEMENTATION
+      ReferenceSim::Reference(
+        walls,
+        excitor,
+        beta,
+        sigma,
+        aux_cells,
+        p,
+        v_x,
+        v_y,
+        p_prev,
+        v_x_prev,
+        v_y_prev
+      )
+      std::swap<float *>(p, p_prev);
+      std::swap<float *>(v_x, v_x_prev);
+      std::swap<float *>(v_y, v_y_prev);
   }
 
+
+
+
+//   // Wait for the kernel to complete
+//   checkCudaErrors(cudaDeviceSynchronize());
+//   // Read the result back, result is in bufferSrc (after final toggle)
+//   checkCudaErrors(cudaMemcpy(output, bufferP_in, size, cudaMemcpyDeviceToHost));
 
 
   //free
@@ -137,6 +192,16 @@ bool fdtdGPUMine(const float* sigma, const int *aux_data, const int timesteps, c
   checkCudaErrors(cudaFree(bufferVx_out));
   checkCudaErrors(cudaFree(bufferVy_out));
   checkCudaErrors(cudaFree(bufferAux_in));
+
+
+    free(beta);
+    free(sigma);
+    free(p);
+    free(v_x);
+    free(v_y);
+    free(p_prev);
+    free(v_x_prev);
+    free(v_y_prev);
 
 
   return true;

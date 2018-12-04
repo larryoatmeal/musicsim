@@ -120,7 +120,6 @@ void swapPtr(number** p1, number **p2)
   *p2 = temp;
 }
 
-
 int main() {
   cout << "Hello world!" << endl;
 
