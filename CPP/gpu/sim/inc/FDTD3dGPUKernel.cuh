@@ -103,19 +103,6 @@ __global__ void AudioKernel(
 #define RADIUS 4
 
 __constant__ float stencil[RADIUS + 1];
-
-
-
-
-
-
-
-
-
-
-
-
-
 __global__ void FiniteDifferencesKernel(float *output,
                                         const float *input,
                                         const int dimx,
