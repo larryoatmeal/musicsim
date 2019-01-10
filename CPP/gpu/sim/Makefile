@@ -278,7 +278,7 @@ FDTD3d.o:src/FDTD3d.cpp
 FDTD3dGPU.o:src/FDTD3dGPU.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-FDTD3d: FDTD3d.o FDTD3dGPU.o FDTD3dReference.o
+FDTD3d: FDTD3d.o FDTD3dGPU.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) mkdir -p bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 	$(EXEC) cp $@ bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
@@ -287,7 +287,7 @@ run: build
 	$(EXEC) ./FDTD3d
 
 clean:
-	rm -f FDTD3d FDTD3d.o FDTD3dGPU.o FDTD3dReference.o
+	rm -f FDTD3d FDTD3d.o FDTD3dGPU.o
 	rm -rf bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/FDTD3d
 
 clobber: clean
