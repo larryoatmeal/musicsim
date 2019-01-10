@@ -14,7 +14,6 @@
 #include <iostream>
 #include <iomanip>
 
-#include "FDTD3dReference.h"
 #include "FDTD3dGPU.h"
 
 #include <helper_functions.h>
