@@ -1,8 +1,6 @@
 #include <cstring>
 #include <iostream>
 
-#include "ArgParser.h"
-#include "Renderer.h"
 #include "Image.h"
 
 #include <iostream>

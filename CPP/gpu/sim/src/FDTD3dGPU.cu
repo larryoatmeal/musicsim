@@ -198,7 +198,7 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
 
         error += abs(output_from_gpu[i] - p_prev[i]);
       }
-
+      
       printf("\tError = %f ", error);
 
 
