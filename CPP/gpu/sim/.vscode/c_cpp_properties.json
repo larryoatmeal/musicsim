@@ -5,7 +5,6 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/../common/inc"
-
             ],
             "defines": [],
             "macFrameworkPath": [

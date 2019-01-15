@@ -16,7 +16,7 @@
 #include <helper_functions.h>
 #include <helper_cuda.h>
 #include "Reference.h"
-#include "FDTD3dGPUKernel.cuh"
+#include "Kernel.cuh"
 #include <stdlib.h>
 
 bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char **argv)

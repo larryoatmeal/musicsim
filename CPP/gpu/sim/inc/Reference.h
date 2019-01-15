@@ -1,3 +1,6 @@
+#ifndef REFERENCE_H
+#define REFERENCE_H
+
 #include "FDTD3dGPU.h"
 #include <cmath>
 #include <algorithm> 
@@ -194,3 +197,5 @@ void Reference(
 }
 
 }
+
+#endif /* REFERENCE_H */

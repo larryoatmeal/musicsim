@@ -272,16 +272,29 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
+Kernel.o:src/Kernel.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
+Sim.o:src/Sim.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
 FDTD3d.o:src/FDTD3d.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
 FDTD3dGPU.o:src/FDTD3dGPU.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-FDTD3d: FDTD3d.o FDTD3dGPU.o
+FDTD3d: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) mkdir -p bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 	$(EXEC) cp $@ bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
+
+#basically [output file]: [input file dependencies]
+#make will figure out the dependencies
+
+libSim.a: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
+	$(EXEC) ar rcs $@ $+
+
 
 run: build
 	$(EXEC) ./FDTD3d
