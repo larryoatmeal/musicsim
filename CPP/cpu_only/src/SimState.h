@@ -50,6 +50,10 @@ class SimState{
             std::swap<float *>(v_y_prev, v_y);
         }
 
+        float read_pressure(){
+            return p[listen_index];
+        }
+
         ~SimState(){
             free(walls);
             free(excitor);
@@ -72,6 +76,13 @@ class SimState{
     }
     float GetPressure(int x, int y){
         return p[index_of_padded(x, y)];
+    }
+
+    float* GetSigma(){
+        return sigma;
+    }
+    int* GetAuxData(){
+        return aux_data;
     }
 
     private:

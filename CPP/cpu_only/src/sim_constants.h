@@ -9,9 +9,10 @@
 
 #define DT  (DS / (1.41421356237 * C) * 0.999999)  // make sure we're actually below the condition
 
-// #define DT_LISTEN  (1.0 / 44000)
-// #define SAMPLE_EVERY_N  (#define) round(DT_LISTEN / DT)
-// #define REAL_LISTENING_FREQUENCY  1 / (SAMPLE_EVERY_N * DT)
+#define DT_LISTEN  (1.0 / 44100)
+#define SAMPLE_EVERY_N  round(DT_LISTEN / DT)
+#define REAL_LISTENING_FREQUENCY  1 / (SAMPLE_EVERY_N * DT)
+
 
 
 #define AN  0.01
@@ -51,7 +52,7 @@
 
 #define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
 #define num_excite  3
-// #define listen_index  (45 + RADIUS) + (155 + RADIUS) * (STRIDE_Y)
+#define listen_index  (45 + PAD_HALF) + (155 + PAD_HALF) * (STRIDE_Y)
 
 
 #define P_MOUTH  3000
