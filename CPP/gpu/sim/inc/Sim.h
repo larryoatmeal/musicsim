@@ -1,11 +1,11 @@
 #ifndef SIM_H
 #define SIM_H
-class SimState{
+class SimStateGPU{
     public:
-        SimState(float *sigma, int * aux_data, int argc, char *argv[]);
+        SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]);
         void step();
         float read_pressure();
-        ~SimState();
+        ~SimStateGPU();
         int GetWidth();
         int GetHeight();
         float GetPressure(int x, int y);

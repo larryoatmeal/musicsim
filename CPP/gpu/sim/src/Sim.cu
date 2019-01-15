@@ -11,17 +11,17 @@
 dim3              dimBlock;
 dim3              dimGrid;
 
-void SimState::step(){
+void SimStateGPU::step(){
 
 };
 
-float SimState::read_pressure(){
+float SimStateGPU::read_pressure(){
   
 }
-SimState::SimState(float *sigma, int * aux_data, int argc, char *argv[]){
+SimStateGPU::SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]){
   init(sigma, aux_data, argc, argv);
 }
-SimState::~SimState(){
+SimStateGPU::~SimStateGPU(){
   checkCudaErrors(cudaFree(bufferP_in));
   checkCudaErrors(cudaFree(bufferVx_in));
   checkCudaErrors(cudaFree(bufferVy_in));
@@ -30,18 +30,18 @@ SimState::~SimState(){
   checkCudaErrors(cudaFree(bufferVy_out));
   checkCudaErrors(cudaFree(bufferAux_in));
 };
-int SimState::GetWidth(){
+int SimStateGPU::GetWidth(){
 
 };
-int SimState::GetHeight(){
+int SimStateGPU::GetHeight(){
 
 };
-float SimState::GetPressure(int x, int y){
+float SimStateGPU::GetPressure(int x, int y){
 
 };
 
 
-void SimState::gpu_step(){
+void SimStateGPU::gpu_step(){
   // Launch the kernel
   // printf("launch kernel\n");
   AudioKernel<<<dimGrid, dimBlock>>>(
@@ -69,7 +69,7 @@ void SimState::gpu_step(){
 
 }
 
-void SimState::read_back(){
+void SimStateGPU::read_back(){
     // float * output_from_gpu = (float *) calloc(N_TOTAL, sizeof(float));
     // // Wait for the kernel to complete
     // checkCudaErrors(cudaDeviceSynchronize());
@@ -77,7 +77,7 @@ void SimState::read_back(){
     // checkCudaErrors(cudaMemcpy(output_from_gpu, bufferP_in, size, cudaMemcpyDeviceToHost));
 }
 
-void SimState::init(float *sigma, int * aux_data, int argc, char *argv[]){
+void SimStateGPU::init(float *sigma, int * aux_data, int argc, char *argv[]){
   float * empty = (float *) calloc(N_TOTAL, sizeof(float));
 
   checkCudaErrors(cudaGetDeviceCount(&deviceCount));

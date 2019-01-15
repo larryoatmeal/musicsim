@@ -8,6 +8,6 @@ int main(int argc, char *argv[]){
   std::cout << "HELLO" << std::endl;
   float* sigma = (float *)calloc(N_TOTAL, sizeof(float));
   int* auxData = (int *)calloc(N_TOTAL, sizeof(int));
-  SimState s(sigma, auxData, argc, argv);
+  SimStateGPU s(sigma, auxData, argc, argv);
   return 0;
 }

@@ -18,7 +18,15 @@ endif()
 # vecmath include directory
 include_directories(vecmath/include)
 add_subdirectory(vecmath)
+
+add_subdirectory(thirdparty/AudioFile)
+include_directories(thirdparty/AudioFile)
+
+
+
 set (SRC_DIR "src/")
+
+include_directories(thirdparty/cxxopts/include)
 
 set(CPP_FILES
     ${SRC_DIR}main.cpp
@@ -36,5 +44,11 @@ SOURCE_GROUP(stb FILES ${STB_SRC})
 
 
 add_executable(a4 ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
-target_link_libraries(a4 vecmath)
+# target_link_libraries(a4 vecmath AudioFile)
+
+include_directories(${CMAKE_SOURCE_DIR}/../gpu/sim/inc)
+
+#find_library(CUDART cudart)
+target_link_libraries(a4 vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
+
 
