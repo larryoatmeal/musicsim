@@ -19,7 +19,7 @@ float SimState::read_pressure(){
   
 }
 SimState::SimState(float *sigma, int * aux_data, int argc, char *argv[]){
-
+  init(sigma, aux_data, argc, argv);
 }
 SimState::~SimState(){
   checkCudaErrors(cudaFree(bufferP_in));
