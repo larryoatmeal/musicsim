@@ -17,7 +17,6 @@
 #include "AudioFile.h"
 #include "Sim.h"
 int main(int argc, char **argv) {
-    SimStateGPU simGPU(0, 0, argc, argv);
 
   cxxopts::Options options("Simulation", "Instrument sim");
   options.add_options()
@@ -42,6 +41,18 @@ if(result.count("debug")){
 
 
   SimState sim;
+    SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
+
+
+    int M = 128000 * 1000;
+    for(int i = 0; i < M; i++){
+        simGPU.step();
+        if(i % (M/100) == 0){
+            std::cout << i * 100 /M << "%" << std::endl;
+        }
+    }
+
+
 
   int N = 20000;
     if (result.count("samples"))
