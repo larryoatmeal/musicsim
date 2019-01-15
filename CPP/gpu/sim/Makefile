@@ -295,7 +295,13 @@ FDTD3d: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
 libSim.a: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
 	$(EXEC) ar rcs $@ $+
 
-
+testInterop: libSim.a
+	# -I sets include directory
+	$(EXEC) g++ -I ./inc -c src/test_harness.cpp
+	# link against the static library ($< is first arg, libSim.a)
+	# -L/usr/local/cuda/lib64 -lcudart required to get cuda to work
+	$(EXEC) g++ -o $@ test_harness.o $< -L/usr/local/cuda/lib64 -lcudart
+    
 run: build
 	$(EXEC) ./FDTD3d
 
