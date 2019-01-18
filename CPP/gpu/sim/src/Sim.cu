@@ -7,19 +7,21 @@
 #include <helper_cuda.h>
 #include "Kernel.cuh"
 #include <stdlib.h>
+#include <vector>
 
 dim3              dimBlock;
 dim3              dimGrid;
-
+int MAX_AUDIO_SIZE = 44100 * 10;
 void SimStateGPU::step(){
-
+  gpu_step();
 };
 
 float SimStateGPU::read_pressure(){
-  
+  return 0;
 }
 SimStateGPU::SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]){
   init(sigma, aux_data, argc, argv);
+  iter = 0;
 }
 SimStateGPU::~SimStateGPU(){
   checkCudaErrors(cudaFree(bufferP_in));
@@ -31,13 +33,13 @@ SimStateGPU::~SimStateGPU(){
   checkCudaErrors(cudaFree(bufferAux_in));
 };
 int SimStateGPU::GetWidth(){
-
+  return W;
 };
 int SimStateGPU::GetHeight(){
-
+  return H;
 };
 float SimStateGPU::GetPressure(int x, int y){
-
+  return 0;
 };
 
 
@@ -52,7 +54,9 @@ void SimStateGPU::gpu_step(){
     bufferVy_out,
     bufferP_out,
     bufferAux_in,
-    buffersSigma_in
+    buffersSigma_in,
+    bufferAudio,
+    iter
   );
   // check for error
     cudaError_t err = cudaGetLastError();
@@ -62,19 +66,31 @@ void SimStateGPU::gpu_step(){
         printf("CUDA error: %s\n", cudaGetErrorString(err));
         exit(-1);
     }
+  //for debug 
+  // cudaDeviceSynchronize();
 
   std::swap<float *>(bufferP_in, bufferP_out);
   std::swap<float *>(bufferVx_in, bufferVx_out);
   std::swap<float *>(bufferVy_in, bufferVy_out);
-
+  iter += 1;
 }
 
-void SimStateGPU::read_back(){
-    // float * output_from_gpu = (float *) calloc(N_TOTAL, sizeof(float));
-    // // Wait for the kernel to complete
-    // checkCudaErrors(cudaDeviceSynchronize());
-    // // Read the result back, result is in bufferP_in (after final toggle)
-    // checkCudaErrors(cudaMemcpy(output_from_gpu, bufferP_in, size, cudaMemcpyDeviceToHost));
+std::vector<float> SimStateGPU::read_back(){
+    float * output_from_gpu = (float *) calloc(MAX_AUDIO_SIZE, sizeof(float));
+    // Wait for the kernel to complete
+    checkCudaErrors(cudaDeviceSynchronize());
+    // Read the result back
+    checkCudaErrors(cudaMemcpy(output_from_gpu, bufferAudio, sizeof(float) * MAX_AUDIO_SIZE, cudaMemcpyDeviceToHost));
+
+    std::cout << "Samples: " << iter << std::endl;
+    std::vector<float> v(iter);
+
+    for(int i = 0; i < iter; i++){
+      v[i] = output_from_gpu[i];
+    }
+    
+    return v;
+
 }
 
 void SimStateGPU::init(float *sigma, int * aux_data, int argc, char *argv[]){
@@ -107,6 +123,10 @@ void SimStateGPU::init(float *sigma, int * aux_data, int argc, char *argv[]){
   checkCudaErrors(cudaMemcpy(bufferVy_out, empty, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(buffersSigma_in, sigma, size, cudaMemcpyHostToDevice));
   checkCudaErrors(cudaMemcpy(bufferAux_in, aux_data, N_TOTAL * sizeof(int), cudaMemcpyHostToDevice));
+
+
+  checkCudaErrors(cudaMalloc((void **)&bufferAudio, MAX_AUDIO_SIZE * sizeof(float)));
+  checkCudaErrors(cudaMemcpy(bufferAudio, (float *) calloc(MAX_AUDIO_SIZE, sizeof(float)), MAX_AUDIO_SIZE * sizeof(float), cudaMemcpyHostToDevice));
 
   
   dimBlock.x = 16;

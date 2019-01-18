@@ -13,6 +13,8 @@
  #define _FDTD3DGPUKernel_H_
 #include "Kernel.cuh"
 #include "FDTD3dGPU.h"
+#include <helper_cuda.h>
+
 // #include <cooperative_groups.h>
 
 // namespace cg = cooperative_groups;
@@ -62,7 +64,9 @@ __global__ void AudioKernel(
   float *v_y,
   float *p,
   int *aux,
-  float *sigma
+  float *sigma,
+  float *audioBuffer,
+  int iter
 )
 {
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
@@ -100,6 +104,12 @@ __global__ void AudioKernel(
   float grad_y = p_down - p[i];
   float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
   v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
+
+  if(i == listen_index){
+    audioBuffer[iter] = p_current;
+  }
+
+  
 }
 
 #endif

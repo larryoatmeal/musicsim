@@ -1,5 +1,9 @@
 #ifndef SIM_H
 #define SIM_H
+
+#include <vector>
+
+
 class SimStateGPU{
     public:
         SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]);
@@ -9,6 +13,8 @@ class SimStateGPU{
         int GetWidth();
         int GetHeight();
         float GetPressure(int x, int y);
+        std::vector<float> read_back();
+
     private:
         int               deviceCount;
         int               targetDevice;
@@ -24,10 +30,10 @@ class SimStateGPU{
         float            *buffersSigma_in    ;
 
         int             *bufferAux_in    ;
+        float           *bufferAudio;
+        int             iter;
         
         void gpu_step();
-
-        void read_back();
 
 
         void init(float *sigma, int * aux_data, int argc, char *argv[]);

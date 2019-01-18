@@ -154,7 +154,9 @@ bool fdtdGPUMine(const int timesteps, const int argc, const char **argv)
         bufferVy_out,
         bufferP_out,
         bufferAux_in,
-        buffersSigma_in
+        buffersSigma_in,
+        0,
+        it
       );
       // check for error
         cudaError_t err = cudaGetLastError();

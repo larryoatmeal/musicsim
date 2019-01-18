@@ -23,7 +23,9 @@ __global__ void AudioKernel(
   float *v_y,
   float *p,
   int *aux,
-  float *sigma
+  float *sigma,
+  float *audioBuffer,
+  int iter
 );
 
 #endif
