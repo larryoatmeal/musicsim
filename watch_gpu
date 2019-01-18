@@ -1,0 +1,1 @@
+fswatch -o CPP/gpu/sim/inc CPP/gpu/sim/src CPP/gpu/sim/Makefile | xargs -n1 ./build_cuda_remote.sh
