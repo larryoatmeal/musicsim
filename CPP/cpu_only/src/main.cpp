@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <string>
-#include <math.h>
 #include <fstream>
 #include <sstream>      // std::stringstream
 #include <iomanip>
@@ -13,20 +12,22 @@
 
 #include "SimState.h"
 #include <cxxopts.hpp>
-
+#include <cmath>
 #include "AudioFile.h"
 #include "Sim.h"
 int main(int argc, char **argv) {
 
-  cxxopts::Options options("Simulation", "Instrument sim");
-  options.add_options()
-  ("h,help", "Print help")
-  ("f,file", "File name", cxxopts::value<std::string>())
-  ("d,debug", "Debug images")
-  ("n,samples", "Number samples", cxxopts::value<int>(), "N")
+    cxxopts::Options options("Simulation", "Instrument sim");
+    options.add_options()
+    ("h,help", "Print help")
+    ("f,file", "File name", cxxopts::value<std::string>())
+    ("d,debug", "Debug images")
+    ("c,cpu", "cpu version")
 
-  ;
-  cxxopts::ParseResult result = options.parse(argc, argv);
+    ("n,samples", "Number samples", cxxopts::value<int>(), "N")
+
+    ;
+    cxxopts::ParseResult result = options.parse(argc, argv);
 
     if (result.count("help"))
     {
@@ -34,106 +35,110 @@ int main(int argc, char **argv) {
       exit(0);
     }
 
-  bool debug = result.count("debug");
-if(result.count("debug")){
-    std::cout << "DEBUG MODE: ON" << std::endl;
-}
 
+    bool debug = result.count("debug");
+    if(result.count("debug")){
+        std::cout << "DEBUG MODE: ON" << std::endl;
+    }
+
+    bool cpu = result.count("cpu");
+    if(result.count("cpu")){
+        std::cout << "CPU_ONLY: ON" << std::endl;
+    }
 
     SimState sim;
-    SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
 
+    std::vector<float> audioBuffer;
 
     int N = 128000;
-    for(int i = 0; i < N; i++){
-        simGPU.step();
-        if(i % (N/100) == 0){
-            std::cout << i * 100 /N << "%" << std::endl;
+
+    if(!cpu){
+        SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
+        for(int i = 0; i < N; i++){
+            simGPU.step();
+            if(i % (N/100) == 0){
+                std::cout << i * 100 /N << "%" << std::endl;
+            }
         }
+
+        audioBuffer = simGPU.read_back();
     }
+    else{
+        if (result.count("samples"))
+        {
+            N = result["samples"].as<int>();
+        }
+        std::cout << "N = " << N << std::endl;
 
-    std::vector<float> audioBuffer = simGPU.read_back();
+        int SKIP = 1000;
+        std::vector<std::string> images;
 
-    for(int i = 0; i < audioBuffer.size(); i++){
-        std::cout << audioBuffer[i] << std::endl;
+        audioBuffer = std::vector<float>(N);
+        for(int i = 0; i < N; i++){
+            sim.step();
+
+            audioBuffer[i] = sim.read_pressure();
+            if(i % (N/100) == 0){
+                std::cout << i * 100 /N << "%" << std::endl;
+            }
+
+            if(debug){
+                if(i % SKIP == 0){
+                    // std::cout << (float) i/N << std::endl;
+                    std::stringstream formattedNumber;
+
+                    formattedNumber << std::setfill('0') << std::setw(6) << i/SKIP;
+
+                    std::string s = "out/img" + formattedNumber.str() + ".png";
+                    Image image(sim.GetWidth(), sim.GetHeight());
+                    for(int x = 0; x < sim.GetWidth(); x++){
+                        for(int y = 0; y < sim.GetHeight(); y++){
+                            float p = sim.GetPressure(x, y);
+                            float col = std::max(std::min(p * 1000, 1.0f), -1.0f);
+                            if(col < 0){
+                                Vector3f color(0, -col, 0);
+                                image.setPixel(x, y, color);
+                            }else{
+                                Vector3f color(col, 0, 0);
+                                image.setPixel(x, y, color);
+                            }
+                        }      
+                    }
+                    images.push_back(s);
+
+                    image.savePNG(s);
+                }
+            }
+        }
+
+        if(debug){
+            std::stringstream video_cmd;
+            int framerate = 24;
+            video_cmd << "ffmpeg" << " " << "-framerate" << " " << 24 << " -i out/img%06d.png -pix_fmt yuv420p out/output.mp4";
+            std::string video = video_cmd.str();
+            std::cout << video << std::endl;
+
+            system(video_cmd.str().c_str());
+
+            for(int i = 0; i < images.size(); i++){
+                std::string s = images[i];
+                std::string rm = "rm " + s;
+                system(rm.c_str());
+            }
+        }
+
     }
-
-//   int N = 20000;
-//     if (result.count("samples"))
-//     {
-//         N = result["samples"].as<int>();
-//     }
-//     std::cout << "N = " << N << std::endl;
-
-
-//   int SKIP = 1000;
-
-//   std::vector<std::string> images;
-
-//   std::vector<float> audioBuffer(N);
-//   for(int i = 0; i < N; i++){
-//     sim.step();
-
-//     audioBuffer[i] = sim.read_pressure();
-//     if(i % (N/100) == 0){
-//         std::cout << i * 100 /N << "%" << std::endl;
-//     }
-
-//     if(debug){
-//         if(i % SKIP == 0){
-//             // std::cout << (float) i/N << std::endl;
-//             std::stringstream formattedNumber;
-
-//             formattedNumber << std::setfill('0') << std::setw(6) << i/SKIP;
-
-//             std::string s = "img" + formattedNumber.str() + ".png";
-//             Image image(sim.GetWidth(), sim.GetHeight());
-//             for(int x = 0; x < sim.GetWidth(); x++){
-//                 for(int y = 0; y < sim.GetHeight(); y++){
-//                     float p = sim.GetPressure(x, y);
-//                     float col = std::max(std::min(p * 1000, 1.0f), -1.0f);
-//                     if(col < 0){
-//                         Vector3f color(0, -col, 0);
-//                         image.setPixel(x, y, color);
-//                     }else{
-//                         Vector3f color(col, 0, 0);
-//                         image.setPixel(x, y, color);
-//                     }
-//                 }      
-//             }
-//             images.push_back(s);
-
-//             image.savePNG(s);
-//         }
-//     }
-//   }
-
-//     if(debug){
-//         std::stringstream video_cmd;
-//         int framerate = 24;
-//         video_cmd << "ffmpeg" << " " << "-framerate" << " " << 24 << " -i img%06d.png -pix_fmt yuv420p output.mp4";
-//         std::string video = video_cmd.str();
-//         std::cout << video << std::endl;
-
-//         system(video_cmd.str().c_str());
-
-//         for(int i = 0; i < images.size(); i++){
-//             std::string s = images[i];
-//             std::string rm = "rm " + s;
-//             system(rm.c_str());
-//         }
-//     }
-
     //normalized audio
     float max_amp = 0;
     for(int i = 0; i < audioBuffer.size(); i++){
-        float amp = abs(audioBuffer[i]);
+        float amp = std::abs(audioBuffer[i]);
 
         max_amp = std::max(amp, max_amp);
     }
     for(int i = 0; i < audioBuffer.size(); i++){
         audioBuffer[i] /= max_amp;
     }
+
 
     int SUBSAMPLED_N = N/ SAMPLE_EVERY_N;
     
@@ -147,6 +152,6 @@ if(result.count("debug")){
     audioFile.setAudioBuffer(buffer);
     audioFile.printSummary();
 
-    audioFile.save ("audio.wav");
+    audioFile.save ("out/audio.wav");
   return 0;
 }

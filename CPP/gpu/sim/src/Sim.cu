@@ -68,7 +68,6 @@ void SimStateGPU::gpu_step(){
     }
   //for debug 
   // cudaDeviceSynchronize();
-
   std::swap<float *>(bufferP_in, bufferP_out);
   std::swap<float *>(bufferVx_in, bufferVx_out);
   std::swap<float *>(bufferVy_in, bufferVy_out);

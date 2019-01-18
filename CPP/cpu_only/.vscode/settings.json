@@ -14,6 +14,7 @@
         "iosfwd": "cpp",
         "iostream": "cpp",
         "string": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "vector": "cpp"
     }
 }

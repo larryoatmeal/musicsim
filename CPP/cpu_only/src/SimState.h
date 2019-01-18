@@ -105,9 +105,9 @@ class SimState{
         walls[index_of_padded(i, 50)] = 1; //
         walls[index_of_padded(i, 55)] = 1;
         }
-        
-        walls[index_of_padded(130, 55)] = 0;
-        walls[index_of_padded(100, 55)] = 0;
+
+        // walls[index_of_padded(130, 55)] = 0;
+        // walls[index_of_padded(100, 55)] = 0;
 
         //excitor
         for(int i = 51; i < 55; i++){

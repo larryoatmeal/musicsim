@@ -52,7 +52,9 @@
 
 #define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
 #define num_excite  3
-#define listen_index  (45 + PAD_HALF) + (155 + PAD_HALF) * (STRIDE_Y)
+#define listen_index  (155 + PAD_HALF) + (45 + PAD_HALF) * (STRIDE_Y)
+
+
 
 
 #define P_MOUTH  3000
