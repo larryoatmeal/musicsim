@@ -120,6 +120,8 @@ int main(int argc, char **argv) {
                 debug_save("p", sim.p_prev, sim.GetWidth(), sim.GetHeight(), i);
                 debug_save("v_x", sim.v_x_prev, sim.GetWidth(), sim.GetHeight(), i);
                 debug_save("v_y", sim.v_y_prev, sim.GetWidth(), sim.GetHeight(), i);
+                debug_save("beta", sim.beta, sim.GetWidth(), sim.GetHeight(), i);
+
             }
 
             if(debug){
@@ -134,7 +136,7 @@ int main(int argc, char **argv) {
                     for(int x = 0; x < sim.GetWidth(); x++){
                         for(int y = 0; y < sim.GetHeight(); y++){
                             float p = sim.GetPressure(x, y);
-                            float col = std::max(std::min(p * 1000, 1.0f), -1.0f);
+                            float col = std::max(std::min(p/1000, 1.0f), -1.0f);
                             if(col < 0){
                                 Vector3f color(0, -col, 0);
                                 image.setPixel(x, y, color);

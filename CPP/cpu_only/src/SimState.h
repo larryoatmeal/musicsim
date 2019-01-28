@@ -189,7 +189,15 @@ class SimState{
         int excitor = getExcitor(aux_data, i);
         int wall_down = getWall(aux_data, i + STRIDE_Y);
         vb_x = excitor * (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF / num_excite;
-        vb_y = wall * ADMITTANCE * p_current + wall_down * -ADMITTANCE * p_down;
+        vb_y = wall * ADMITTANCE * -1 * p_down + wall_down * ADMITTANCE * p_current;
+
+        // if(idx == 40 && idy == 50){
+        //     std::cout << wall << std::endl;
+        //     std::cout << wall_down << std::endl;
+        //     std::cout << p_current << std::endl;
+        //     std::cout << p_down << std::endl;
+        //     std::cout << vb_y << std::endl;
+        // }
 
         //VELOCITY------------------------------
         int beta_current = getBeta(aux_data, i);
@@ -197,12 +205,12 @@ class SimState{
         float beta_x = std::min(beta_current, getBeta(aux_data, i + STRIDE_X));
         float grad_x = p_right - p_current;
         float sigma_prime_dt_x = (1 - beta_x + sigma[i]) * DT;
-        v_x[i] = beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x;
+        v_x[i] = (beta_x * v_x_prev[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
 
         float beta_y = std::min(beta_current, getBeta(aux_data, i + STRIDE_Y));
         float grad_y = p_down - p[i];
         float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
-        v_y[i] = beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y;
+        v_y[i] = (beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
     }
 
 };

@@ -290,7 +290,7 @@ class Simulation:
         save_grid("v_x", newV.x, self.iter)
         save_grid("v_y", newV.y, self.iter)
 
-        
+
         self.pressures.add(newP)
         self.velocities.add(newV)
         self.vbs.add(newVb)
