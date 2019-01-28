@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
     if(!cpu){
         #ifdef LOCAL
           std::cout << "NO GPU CONNECTED" << std::endl;
+          return 0;
         #else
           SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
           for(int i = 0; i < N; i++){
@@ -98,7 +99,6 @@ int main(int argc, char **argv) {
           }
           audioBuffer = simGPU.read_back();
         #endif
-        return 0;
     }
     else{
         
@@ -180,6 +180,8 @@ int main(int argc, char **argv) {
     for(int i = 0; i < audioBuffer.size(); i++){
         audioBuffer[i] /= max_amp;
     }
+
+    std::cout << "FINISHED" << std::endl;
 
 
     int SUBSAMPLED_N = N/ SAMPLE_EVERY_N;

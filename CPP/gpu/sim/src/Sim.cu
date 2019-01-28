@@ -1,6 +1,5 @@
 #include "Sim.h"
 
-
 #include <iostream>
 #include <algorithm>
 #include <helper_functions.h>
@@ -8,6 +7,7 @@
 #include "Kernel.cuh"
 #include <stdlib.h>
 #include <vector>
+#include "sim_constants.h"
 
 dim3              dimBlock;
 dim3              dimGrid;

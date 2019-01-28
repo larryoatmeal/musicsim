@@ -213,5 +213,6 @@ class SimState{
         v_y[i] = (beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
     }
 
+
 };
 #endif // SIM_STATE_H

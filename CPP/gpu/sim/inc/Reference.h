@@ -2,6 +2,10 @@
 #define REFERENCE_H
 
 #include "FDTD3dGPU.h"
+#include "sim_constants.h"
+
+
+
 #include <cmath>
 #include <algorithm> 
 typedef float number;

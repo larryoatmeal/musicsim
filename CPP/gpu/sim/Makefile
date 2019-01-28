@@ -253,6 +253,7 @@ endif
 endif
 
 INCLUDES += -Iinc
+INCLUDES += -I../../cpu_only/src
 
 ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
