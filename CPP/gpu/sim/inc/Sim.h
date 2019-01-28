@@ -15,10 +15,6 @@ class SimStateGPU{
         float GetPressure(int x, int y);
         std::vector<float> read_back();
 
-    private:
-        int               deviceCount;
-        int               targetDevice;
-
         float            *bufferP_in     ;
         float            *bufferVx_in    ;
         float            *bufferVy_in    ;
@@ -31,6 +27,11 @@ class SimStateGPU{
 
         int             *bufferAux_in    ;
         float           *bufferAudio;
+    private:
+        int               deviceCount;
+        int               targetDevice;
+
+        
         int             iter;
         
         void gpu_step();

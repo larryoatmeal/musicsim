@@ -84,19 +84,19 @@ class SimState{
     int* GetAuxData(){
         return aux_data;
     }
-
+    float *walls = 0;
+    float *excitor = 0;
+    float *beta = 0;
+    float *sigma = 0;
+    int *aux_data = 0;
+    float *p = 0;
+    float *v_x = 0;
+    float *v_y = 0;
+    float *p_prev = 0;
+    float *v_x_prev = 0;
+    float *v_y_prev = 0;
     private:
-        float *walls = 0;
-        float *excitor = 0;
-        float *beta = 0;
-        float *sigma = 0;
-        int *aux_data = 0;
-        float *p = 0;
-        float *v_x = 0;
-        float *v_y = 0;
-        float *p_prev = 0;
-        float *v_x_prev = 0;
-        float *v_y_prev = 0;
+        
 
 
     void init(){

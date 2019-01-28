@@ -20,6 +20,22 @@
 #include "Sim.h"
 #endif
 
+void debug_save(std::string name, float* data, int w, int h, int i){
+    std::ofstream myfile;
+    std::stringstream file_name;
+    file_name << "out/cpp_" << name << "_" << i << ".csv";
+
+    myfile.open (file_name.str());
+    for(int y = 0; y < h; y++){
+        for(int x = 0; x < w; x++){
+            myfile << data[index_of_padded(x, y)] << ",";
+        }
+        myfile << "\n";
+    }
+    myfile.close();
+}
+
+
 int main(int argc, char **argv) {
 
     cxxopts::Options options("Simulation", "Instrument sim");
@@ -28,6 +44,7 @@ int main(int argc, char **argv) {
     ("f,file", "File name", cxxopts::value<std::string>())
     ("d,debug", "Debug images")
     ("c,cpu", "cpu version")
+    ("i,inspect", "full inspect")
 
     ("n,samples", "Number samples", cxxopts::value<int>(), "N")
 
@@ -51,11 +68,22 @@ int main(int argc, char **argv) {
         std::cout << "CPU_ONLY: ON" << std::endl;
     }
 
+    bool csv_out = result.count("inspect");
+    if(csv_out){
+        std::cout << "CSV_OUT: ON" << std::endl;
+    }
+
     SimState sim;
 
     std::vector<float> audioBuffer;
 
     int N = 128000;
+    if (result.count("samples"))
+    {
+        N = result["samples"].as<int>();
+    }
+    std::cout << "N = " << N << std::endl;
+    
 
     if(!cpu){
         #ifdef LOCAL
@@ -73,11 +101,7 @@ int main(int argc, char **argv) {
         return 0;
     }
     else{
-        if (result.count("samples"))
-        {
-            N = result["samples"].as<int>();
-        }
-        std::cout << "N = " << N << std::endl;
+        
 
         int SKIP = 1000;
         std::vector<std::string> images;
@@ -89,6 +113,13 @@ int main(int argc, char **argv) {
             audioBuffer[i] = sim.read_pressure();
             if(i % (N/100) == 0){
                 std::cout << i * 100 /N << "%" << std::endl;
+            }
+
+            if(csv_out){
+                // std::cout << "CSV_OUT" << std::endl;
+                debug_save("p", sim.p_prev, sim.GetWidth(), sim.GetHeight(), i);
+                debug_save("v_x", sim.v_x_prev, sim.GetWidth(), sim.GetHeight(), i);
+                debug_save("v_y", sim.v_y_prev, sim.GetWidth(), sim.GetHeight(), i);
             }
 
             if(debug){
