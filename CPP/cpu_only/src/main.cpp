@@ -14,7 +14,12 @@
 #include <cxxopts.hpp>
 #include <cmath>
 #include "AudioFile.h"
+
+
+#ifndef LOCAL
 #include "Sim.h"
+#endif
+
 int main(int argc, char **argv) {
 
     cxxopts::Options options("Simulation", "Instrument sim");
@@ -53,15 +58,19 @@ int main(int argc, char **argv) {
     int N = 128000;
 
     if(!cpu){
-        SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
-        for(int i = 0; i < N; i++){
-            simGPU.step();
-            if(i % (N/100) == 0){
-                std::cout << i * 100 /N << "%" << std::endl;
-            }
-        }
-
-        audioBuffer = simGPU.read_back();
+        #ifdef LOCAL
+          std::cout << "NO GPU CONNECTED" << std::endl;
+        #else
+          SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
+          for(int i = 0; i < N; i++){
+              simGPU.step();
+              if(i % (N/100) == 0){
+                  std::cout << i * 100 /N << "%" << std::endl;
+              }
+          }
+          audioBuffer = simGPU.read_back();
+        #endif
+        return 0;
     }
     else{
         if (result.count("samples"))
@@ -102,7 +111,7 @@ int main(int argc, char **argv) {
                                 Vector3f color(col, 0, 0);
                                 image.setPixel(x, y, color);
                             }
-                        }      
+                        }
                     }
                     images.push_back(s);
 
@@ -141,7 +150,7 @@ int main(int argc, char **argv) {
 
 
     int SUBSAMPLED_N = N/ SAMPLE_EVERY_N;
-    
+
     AudioFile<float> audioFile;
     AudioFile<float>::AudioBuffer buffer;
     buffer.resize (1);

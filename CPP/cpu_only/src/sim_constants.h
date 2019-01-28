@@ -17,9 +17,9 @@
 
 #define AN  0.01
 //have to change both
-#define ADMITTANCE  (1 / (RHO * C * (1 + 0.94868329805) / (1 - 0.94868329805)))
+// #define ADMITTANCE  (1 / (RHO * C * (1 + 0.9949874371) / (1 - 0.1)))
 // #define ADMITTANCE  1 / (RHO * C * (1 + sqrt(1 - AN)) / (1 - sqrt(1 - AN)))
-
+#define ADMITTANCE 6.1531160706303395e-06
 
 
 #define COEFF_DIVERGENCE  (RHO * C * C * DT/DS)
@@ -51,7 +51,7 @@
 #define N_TOTAL (W_PADDED * H_PADDED)
 
 #define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
-#define num_excite  3
+#define num_excite  4
 #define listen_index  (155 + PAD_HALF) + (45 + PAD_HALF) * (STRIDE_Y)
 
 
