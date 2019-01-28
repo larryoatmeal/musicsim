@@ -284,11 +284,11 @@ class Simulation:
 
 
         #debug
-        save_grid("p", newP, self.iter)
-        save_grid("vb_x", newVb.x, self.iter)
-        save_grid("vb_y", newVb.y, self.iter)
-        save_grid("v_x", newV.x, self.iter)
-        save_grid("v_y", newV.y, self.iter)
+        # save_grid("p", newP, self.iter)
+        # save_grid("vb_x", newVb.x, self.iter)
+        # save_grid("vb_y", newVb.y, self.iter)
+        # save_grid("v_x", newV.x, self.iter)
+        # save_grid("v_y", newV.y, self.iter)
 
 
         self.pressures.add(newP)

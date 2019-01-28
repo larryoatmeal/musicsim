@@ -199,7 +199,5 @@ void Reference(
         }
     }
 }
-
 }
-
 #endif /* REFERENCE_H */
