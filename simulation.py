@@ -29,6 +29,7 @@ REAL_LISTENING_FREQUENCY = 1 / (SAMPLE_EVERY_N * DT)
 
 AN = 0.01
 ADMITTANCE = 1 / (RHO * C * (1 + np.sqrt(1 - AN)) / (1 - np.sqrt(1 - AN)))
+print ADMITTANCE
 # W = 220
 # H = 110
 
@@ -113,7 +114,6 @@ def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells
 
         vb_x = vb_x_wall + vb_x_excitor
         vb_y = vb_y_wall
-
         vb = Velocity(x=vb_x, y=vb_y)
         return vb
     elif excitation_mode == EXCITATION_IMPULSE:
@@ -147,6 +147,20 @@ def shift(m, direction):
         print "ERROR, NOT VALID DIRECTION"
 
     return result
+
+
+def save_grid(name, data, i = 0):
+    with open('out/{0}_{1}.csv'.format(name, i),'w') as file:
+
+        (h, w) = data.shape
+        for y in range(h):
+            for x in range(w):
+                file.write(str(data[y, x]) + ",")
+            file.write("\n")
+
+
+
+
 
 
 # this is slower...
@@ -258,7 +272,7 @@ class Simulation:
     def step(self):
         newP = pressure_step(self.pressures[-1], self.velocities[-1], self.pressure_den)
 
-        p_bore = newP[self.p_bore_coord[0], self.p_bore_coord[1]]  # should be new pressure I think
+        p_bore = self.pressures[-1][self.p_bore_coord[0], self.p_bore_coord[1]]  # should be new pressure I think
         newVb = vb_step(newP, self.excitation_mode, self.p_mouth, p_bore, self.excitor_template, self.num_excite_cells,
                         self.wall_template, self.wall_cell_admittance_up, self.wall_cell_admittance_down, self.iter)
 
@@ -266,6 +280,17 @@ class Simulation:
                              self.sigma_prime_dt_vx, self.sigma_prime_dt_vy,
                              self.coeff_vx_gradient, self.coeff_vy_gradient, self.vstep_denom_x, self.vstep_denom_y)
 
+
+
+
+        #debug
+        save_grid("p", newP, self.iter)
+        save_grid("vb_x", newVb.x, self.iter)
+        save_grid("vb_y", newVb.y, self.iter)
+        save_grid("v_x", newV.x, self.iter)
+        save_grid("v_y", newV.y, self.iter)
+
+        
         self.pressures.add(newP)
         self.velocities.add(newV)
         self.vbs.add(newVb)
