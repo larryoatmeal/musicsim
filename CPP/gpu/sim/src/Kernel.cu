@@ -72,8 +72,8 @@ __global__ void AudioKernel(
 {
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
   int idy=blockIdx.y*blockDim.y+threadIdx.y;
-
-  int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
+  // int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
+  int i =  idx + (idy + 1) * STRIDE_Y;
 
   //PRESSURE------------------------------
 

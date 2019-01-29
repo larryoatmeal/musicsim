@@ -11,8 +11,9 @@ float* alloc_grid(){
   return (float *)calloc(N_TOTAL, sizeof(float));
 }
 
-int index_of_padded(int w, int h){
-  return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
+int index_of_padded(int x, int y){
+//   return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
+    return x + ( (y + 1) * STRIDE_Y);
 }
 
 class SimState{
@@ -105,7 +106,7 @@ class SimState{
         walls[index_of_padded(i, 50)] = 1; //
         walls[index_of_padded(i, 55)] = 1;
         }
-        
+
         walls[index_of_padded(130, 55)] = 0;
         walls[index_of_padded(100, 55)] = 0;
 

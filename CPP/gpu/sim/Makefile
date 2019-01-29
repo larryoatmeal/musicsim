@@ -282,10 +282,10 @@ Sim.o:src/Sim.cu
 FDTD3d.o:src/FDTD3d.cpp
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-FDTD3dGPU.o:src/FDTD3dGPU.cu
-	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+# FDTD3dGPU.o:src/FDTD3dGPU.cu
+# 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-FDTD3d: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
+FDTD3d: FDTD3d.o Sim.o Kernel.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
 	$(EXEC) mkdir -p bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 	$(EXEC) cp $@ bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
@@ -293,7 +293,7 @@ FDTD3d: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
 #basically [output file]: [input file dependencies]
 #make will figure out the dependencies
 
-libSim.a: FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
+libSim.a: FDTD3d.o Sim.o Kernel.o
 	$(EXEC) ar rcs $@ $+
 
 testInterop: libSim.a

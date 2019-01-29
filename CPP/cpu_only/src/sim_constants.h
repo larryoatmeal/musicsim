@@ -41,14 +41,27 @@
 
 #define PAD_HALF 1
 
-#define W_PADDED (W + 2 * PAD_HALF)
-#define H_PADDED (H + 2 * PAD_HALF)
+// #define W_PADDED (W + 2 * PAD_HALF)
+// #define H_PADDED (H + 2 * PAD_HALF)
 
-#define STRIDE_Y (W_PADDED)
+// #define STRIDE_Y (W_PADDED)
+// #define STRIDE_X 1
+
+
+// #define N_TOTAL (W_PADDED * H_PADDED)
+
+
+// #define W_PADDED (W + 2 * PAD_HALF)
+// #define H_PADDED (H + 2 * PAD_HALF)
+
+#define STRIDE_Y (W)
 #define STRIDE_X 1
 
+//pad top and bottom with row
+//let columsn wraps at edges
+#define N_TOTAL (W * H + 2 * W)
 
-#define N_TOTAL (W_PADDED * H_PADDED)
+
 
 #define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
 #define num_excite  4
