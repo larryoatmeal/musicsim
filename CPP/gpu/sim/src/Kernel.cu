@@ -56,6 +56,32 @@ __device__ float pressureStep(
   return (p_prev[i] - COEFF_DIVERGENCE * divergence)/p_denom;
 }
 
+__device__ int getIndexGlobal(int x, int y){
+  return x + (y + 1) * STRIDE_Y;
+}
+__device__ int getIndexLocal(int thread_x, int thread_y){
+  return (thread_x + 1) + (thread_y + 1) * 18;
+}
+
+__device__ int loadChunk(
+  float *shared,
+  float *global,
+  int thread_x,
+  int thread_y,
+  int offset
+)
+{ 
+  int local_index = thread_x + thread_y * 16 + offset;
+
+  int local_x = local_index % 18;
+  int local_y = local_index / 18;
+  int global_x = local_x + blockIdx.x*blockDim.x - 1;
+  int global_y = local_y + blockIdx.y*blockDim.y - 1;
+  shared[local_index] = global[global_x + (global_y + 1) * STRIDE_Y];
+  return local_index;
+}
+
+
 
 __global__ void AudioKernel(
   float *v_x_prev,
@@ -73,7 +99,28 @@ __global__ void AudioKernel(
   int idx=blockIdx.x*blockDim.x+threadIdx.x;
   int idy=blockIdx.y*blockDim.y+threadIdx.y;
   // int i = (idx + PAD_HALF) + STRIDE_Y * (idy + PAD_HALF);
+
   int i =  idx + (idy + 1) * STRIDE_Y;
+
+  //load shared memory ----------------------------------------------------------------
+  const int SHARED_N = (16 + 2) * (16 + 2);
+  __shared__ float v_x_prev_shared[SHARED_N]; //padded memory
+  __shared__ float v_y_prev_shared[SHARED_N];
+  __shared__ float p_prev_shared  [SHARED_N];
+
+  //load first part
+  loadChunk(v_x_prev_shared, v_x_prev, threadIdx.x, threadIdx.y, 0);
+  loadChunk(v_y_prev_shared, v_y_prev, threadIdx.x, threadIdx.y, 0);
+  loadChunk(p_prev_shared, p_prev, threadIdx.x, threadIdx.y, 0);
+
+  //load second
+  int offset = 256;
+  if(threadIdx.x + threadIdx.y * 16 + offset < SHARED_N){
+    loadChunk(v_x_prev_shared, v_x_prev, threadIdx.x, threadIdx.y, offset);
+    loadChunk(v_y_prev_shared, v_y_prev, threadIdx.x, threadIdx.y, offset);
+    loadChunk(p_prev_shared, p_prev, threadIdx.x, threadIdx.y, offset);
+  }
+  __syncthreads();
 
   //PRESSURE------------------------------
 
