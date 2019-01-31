@@ -56,10 +56,14 @@
 
 #define STRIDE_Y (W)
 #define STRIDE_X 1
+#define STRIDE_X_SHARED (STRIDE_X)
+
+#define STRIDE_Y_SHARED (16 + 2)
+
 
 //pad top and bottom with row
 //let columsn wraps at edges
-#define N_TOTAL (W * H + 2 * W)
+#define N_TOTAL (W * H + 4 * W)
 
 
 

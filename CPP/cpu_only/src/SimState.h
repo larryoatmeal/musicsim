@@ -13,7 +13,7 @@ float* alloc_grid(){
 
 int index_of_padded(int x, int y){
 //   return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
-    return x + ( (y + 1) * STRIDE_Y);
+    return x + ( (y + 2) * STRIDE_Y);
 }
 
 class SimState{
