@@ -1,1 +1,2 @@
-fswatch -o CPP/ | xargs -n1 ./sync
+fswatch -o CPP/ | xargs -n1 ./sync &
+fswatch -o CPP/gpu/sim/inc CPP/gpu/sim/src CPP/gpu/sim/Makefile | xargs -n1 ./build_cuda_remote.sh
