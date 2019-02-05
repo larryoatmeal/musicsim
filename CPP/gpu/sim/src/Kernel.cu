@@ -153,18 +153,21 @@ __global__ void AudioKernel(
   // //VELOCITY------------------------------
   int beta_current = getBeta(aux_shared, i);
 
+  int sigma_term = 1 + sigma_shared[i];
+
+
   float beta_x = min(beta_current, getBeta(aux_shared, i + STRIDE_X_SHARED));
   float grad_x = p_right - p_current;
-  float sigma_prime_dt_x = (1 - beta_x + sigma_shared[i]) * DT;
-  v_x[i_global] = (beta_x * v_x_prev_shared[i] - beta_x * beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
+  float sigma_prime_dt_x = (sigma_term - beta_x) * DT;
+  v_x[i_global] = (beta_x * v_x_prev_shared[i] - beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
 
 
-  
+
   float beta_y = min(beta_current, getBeta(aux_shared, i + STRIDE_Y_SHARED));
   float grad_y = p_down - p_current;
-  float sigma_prime_dt_y = (1 - beta_y + sigma_shared[i]) * DT;
+  float sigma_prime_dt_y = (sigma_term - beta_y) * DT;
 
-  v_y[i_global] = (beta_y * v_y_prev_shared[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
+  v_y[i_global] = (beta_y * v_y_prev_shared[i] - beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
 
   if(i_global == listen_index){
     audioBuffer[iter] = p_current;

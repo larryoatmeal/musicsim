@@ -50,7 +50,6 @@
 
 // #define N_TOTAL (W_PADDED * H_PADDED)
 
-
 // #define W_PADDED (W + 2 * PAD_HALF)
 // #define H_PADDED (H + 2 * PAD_HALF)
 
