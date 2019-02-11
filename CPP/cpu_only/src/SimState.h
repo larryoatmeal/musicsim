@@ -7,14 +7,7 @@
 #include "sim_constants.h"
 
 
-float* alloc_grid(){
-  return (float *)calloc(N_TOTAL, sizeof(float));
-}
 
-int index_of_padded(int x, int y){
-//   return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
-    return x + ( (y + 2) * STRIDE_Y);
-}
 
 class SimState{
     public:
@@ -36,10 +29,27 @@ class SimState{
             v_y_prev = alloc_grid();
         }
 
+        void init_default_walls(){
+            for(int i = 40; i < 150; i++){
+                setWall(i, 50, 1);
+                setWall(i, 55, 1);
+            }
+            // walls[index_of_padded(130, 55)] = 0;
+            // walls[index_of_padded(100, 55)] = 0;
+        }
+
+        void clear(){
+            clear_grid(p);
+            clear_grid(v_x);
+            clear_grid(v_y);
+            clear_grid(p_prev);
+            clear_grid(v_x_prev);
+            clear_grid(v_y_prev);
+        }
 
         void step(){
             for(int x = 0; x < W; x++){
-                for(int y = 0; y < H; y++){
+                for(int y = 0; y < HEIGHT; y++){
                     AudioKernel(
                         x,
                         y
@@ -73,7 +83,7 @@ class SimState{
         return W;
     }
     int GetHeight(){
-        return H;
+        return HEIGHT;
     }
     float GetPressure(int x, int y){
         return p[index_of_padded(x, y)];
@@ -96,20 +106,21 @@ class SimState{
     float *p_prev = 0;
     float *v_x_prev = 0;
     float *v_y_prev = 0;
+
+    // int p_bore_index =  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y);
+    // int num_excite = 4;
+    // int listen_index = (155 + PAD_HALF) + (45 + PAD_HALF) * (STRIDE_Y);
+
+    void setWall(int x, int y, int val){
+        int i = index_of_padded(x, y);
+        walls[i] = val;
+        beta[i] = 1 - (walls[i] + excitor[i]);
+        aux_data[i] = ( (int) walls[i] << 2) + ( (int) excitor[i] << 1) + (int) beta[i];
+    }
     private:
-        
-
-
     void init(){
-    //walls
-        for(int i = 40; i < 150; i++){
-        walls[index_of_padded(i, 50)] = 1; //
-        walls[index_of_padded(i, 55)] = 1;
-        }
-
-        walls[index_of_padded(130, 55)] = 0;
-        walls[index_of_padded(100, 55)] = 0;
-
+        //walls
+        
         //excitor
         for(int i = 51; i < 55; i++){
         excitor[index_of_padded(40, i)] = 1;
@@ -123,7 +134,7 @@ class SimState{
         //sigma
         for(int i = 0; i < PML_LAYERS + 1; i++){
         for(int x = i; x < W - i; x++){
-            for(int y = i; y < H - i; y++){
+            for(int y = i; y < HEIGHT - i; y++){
             sigma[index_of_padded(x, y)] = 0.5 / DT * (PML_LAYERS - i)/PML_LAYERS;
             }
         }
@@ -133,6 +144,10 @@ class SimState{
         aux_data[i] = ( (int) walls[i] << 2) + ( (int) excitor[i] << 1) + (int) beta[i];
         }
     }
+
+    
+
+
 
     int getBeta(
         int *aux,
@@ -212,6 +227,19 @@ class SimState{
         float grad_y = p_down - p[i];
         float sigma_prime_dt_y = (1 - beta_y + sigma[i]) * DT;
         v_y[i] = (beta_y * v_y_prev[i] - beta_y * beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
+    }
+
+    float* alloc_grid(){
+        return (float *)calloc(N_TOTAL, sizeof(float));
+    }
+
+    void clear_grid(float * data){
+        memset(data, 0, N_TOTAL);
+    }
+
+    int index_of_padded(int x, int y){
+    //   return (w + PAD_HALF) + (h + PAD_HALF) * (STRIDE_Y);
+        return x + ( (y + 2) * STRIDE_Y);
     }
 
 

@@ -14,25 +14,63 @@
 #include <cxxopts.hpp>
 #include <cmath>
 #include "AudioFile.h"
+#include "Simulator.h"
+
+
+#ifdef PYTHON
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#endif
 
 
 #ifndef LOCAL
 #include "Sim.h"
 #endif
 
-void debug_save(std::string name, float* data, int w, int h, int i){
-    std::ofstream myfile;
-    std::stringstream file_name;
-    file_name << "out/cpp_" << name << "_" << i << ".csv";
 
-    myfile.open (file_name.str());
-    for(int y = 0; y < h; y++){
-        for(int x = 0; x < w; x++){
-            myfile << data[index_of_padded(x, y)] << ",";
-        }
-        myfile << "\n";
-    }
-    myfile.close();
+#ifdef PYTHON
+
+namespace py = pybind11;
+
+int add(int i, int j) {
+    return i + j;
+}
+
+int test(){
+    Simulator sim;
+}
+
+PYBIND11_MODULE(pytest, m) {
+    m.doc() = "pybind11 example plugin"; // optional module docstring
+
+    m.def("add", &add, "A function which adds two numbers");
+
+    py::class_<Simulator>(m, "Simulator")
+        .def(py::init<>())
+        .def("init", &Simulator::init)
+        .def("run", &Simulator::run);
+        // .def("getName", &Pet::getName);
+}
+#endif
+
+
+
+
+
+
+void debug_save(std::string name, float* data, int w, int h, int i){
+    // std::ofstream myfile;
+    // std::stringstream file_name;
+    // file_name << "out/cpp_" << name << "_" << i << ".csv";
+
+    // myfile.open (file_name.str());
+    // for(int y = 0; y < h; y++){
+    //     for(int x = 0; x < w; x++){
+    //         myfile << data[index_of_padded(x, y)] << ",";
+    //     }
+    //     myfile << "\n";
+    // }
+    // myfile.close();
 }
 
 
@@ -74,6 +112,7 @@ int main(int argc, char **argv) {
     }
 
     SimState sim;
+    sim.init_default_walls();
 
     std::vector<float> audioBuffer;
 

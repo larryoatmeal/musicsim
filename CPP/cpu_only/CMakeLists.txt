@@ -22,6 +22,7 @@ add_subdirectory(vecmath)
 add_subdirectory(thirdparty/AudioFile)
 include_directories(thirdparty/AudioFile)
 
+add_subdirectory(pybind11)
 
 
 set (SRC_DIR "src/")
@@ -32,6 +33,7 @@ set(CPP_FILES
     ${SRC_DIR}main.cpp
     ${SRC_DIR}stb.cpp
     ${SRC_DIR}Image.cpp
+    ${SRC_DIR}Simulator.cpp
     )
 
 set(CPP_HEADERS
@@ -56,3 +58,8 @@ target_compile_definitions(local_exec PRIVATE LOCAL=1)
 
 #so local_exec will only compile on make local
 add_dependencies(local local_exec)
+
+
+pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
+target_link_libraries(pytest vecmath AudioFile)
+target_compile_definitions(pytest PRIVATE PYTHON=1 LOCAL=1)

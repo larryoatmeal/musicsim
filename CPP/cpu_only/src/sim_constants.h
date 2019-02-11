@@ -1,5 +1,5 @@
 #define RHO  1.1760
-#define C  3.4723e2
+#define Cs  3.4723e2
 #define GAMMA  1.4017
 #define MU  1.8460e-5
 #define PRANDLT  0.7073
@@ -7,7 +7,7 @@
 
 // #define DT  (DS / (sqrt(2) * C) * 0.999999)  // make sure we're actually below the condition
 
-#define DT  (DS / (1.41421356237 * C) * 0.999999)  // make sure we're actually below the condition
+#define DT  (DS / (1.41421356237 * Cs) * 0.999999)  // make sure we're actually below the condition
 
 #define DT_LISTEN  (1.0 / 44100)
 #define SAMPLE_EVERY_N  round(DT_LISTEN / DT)
@@ -22,7 +22,7 @@
 #define ADMITTANCE 6.1531160706303395e-06
 
 
-#define COEFF_DIVERGENCE  (RHO * C * C * DT/DS)
+#define COEFF_DIVERGENCE  (RHO * Cs * Cs * DT/DS)
 #define COEFF_GRADIENT  (DT/RHO/DS)
 
 #define H_BORE  0.015  // 15mm, bore diameter of clarinet
@@ -37,7 +37,7 @@
 #define PML_LAYERS  6
 
 #define W  256
-#define H  128
+#define HEIGHT  128
 
 #define PAD_HALF 1
 
@@ -62,13 +62,14 @@
 
 //pad top and bottom with row
 //let columsn wraps at edges
-#define N_TOTAL (W * H + 4 * W)
+#define N_TOTAL (W * HEIGHT + 4 * W)
 
 
 
 #define p_bore_index  (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y)
 #define num_excite  4
 #define listen_index  (155 + PAD_HALF) + (45 + PAD_HALF) * (STRIDE_Y)
+
 
 
 

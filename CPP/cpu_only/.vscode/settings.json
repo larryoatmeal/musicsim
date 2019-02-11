@@ -17,6 +17,7 @@
         "optional": "cpp",
         "vector": "cpp",
         "fstream": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "variant": "cpp"
     }
 }
