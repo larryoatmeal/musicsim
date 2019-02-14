@@ -12,7 +12,8 @@ class SimStateGPU{
         ~SimStateGPU();
         int GetWidth();
         int GetHeight();
-        float GetPressure(int x, int y);
+        void setAux(int x, int y, int val);
+        void clear();
         std::vector<float> read_back();
 
         float            *bufferP_in     ;

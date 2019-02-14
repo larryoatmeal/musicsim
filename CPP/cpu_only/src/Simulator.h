@@ -5,6 +5,9 @@
 
 #ifdef LOCAL
 #include "SimState.h"
+#else
+#include "Sim.h"
+
 #endif
 
 class Simulator{
@@ -23,6 +26,7 @@ private:
   #ifdef LOCAL
     SimState simState;
   #else
+    SimStateGPU simState;
   #endif
 
 };

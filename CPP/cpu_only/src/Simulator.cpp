@@ -24,10 +24,18 @@ void Simulator::clearWall(int x, int y){
 
 #else
 void Simulator::init(){
-
+  SimState sim;
+  simState = SimStateGPU(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
 }
 std::vector<float> Simulator::run(int iter){
+  for(int i = 0; i < iter; i++){
+    simState.step();
+  }
 
+  std::vector<float> v = simState.read_back();
+
+  simState.clear();
+  return v;
 }
 
 void Simulator::setWall(int x, int y){

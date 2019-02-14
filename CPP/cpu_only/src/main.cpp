@@ -17,6 +17,7 @@
 #include "Simulator.h"
 
 
+
 #ifdef PYTHON
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -75,6 +76,8 @@ void debug_save(std::string name, float* data, int w, int h, int i){
 
 
 int main(int argc, char **argv) {
+
+
 
     cxxopts::Options options("Simulation", "Instrument sim");
     options.add_options()

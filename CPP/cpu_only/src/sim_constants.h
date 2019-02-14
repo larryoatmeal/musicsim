@@ -36,12 +36,12 @@
 
 #define PML_LAYERS  6
 
-#define W  256
+#define WIDTH  256
 #define HEIGHT  128
 
 #define PAD_HALF 1
 
-// #define W_PADDED (W + 2 * PAD_HALF)
+// #define W_PADDED (WIDTH + 2 * PAD_HALF)
 // #define H_PADDED (H + 2 * PAD_HALF)
 
 // #define STRIDE_Y (W_PADDED)
@@ -50,10 +50,10 @@
 
 // #define N_TOTAL (W_PADDED * H_PADDED)
 
-// #define W_PADDED (W + 2 * PAD_HALF)
+// #define W_PADDED (WIDTH + 2 * PAD_HALF)
 // #define H_PADDED (H + 2 * PAD_HALF)
 
-#define STRIDE_Y (W)
+#define STRIDE_Y (WIDTH)
 #define STRIDE_X 1
 #define STRIDE_X_SHARED (STRIDE_X)
 
@@ -62,7 +62,7 @@
 
 //pad top and bottom with row
 //let columsn wraps at edges
-#define N_TOTAL (W * HEIGHT + 4 * W)
+#define N_TOTAL (WIDTH * HEIGHT + 4 * WIDTH)
 
 
 

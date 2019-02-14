@@ -5,7 +5,7 @@
 #include <cmath>
 #include <algorithm> 
 #include "sim_constants.h"
-
+#include <string.h>
 
 
 
@@ -48,7 +48,7 @@ class SimState{
         }
 
         void step(){
-            for(int x = 0; x < W; x++){
+            for(int x = 0; x < WIDTH; x++){
                 for(int y = 0; y < HEIGHT; y++){
                     AudioKernel(
                         x,
@@ -80,7 +80,7 @@ class SimState{
         }
 
     int GetWidth(){
-        return W;
+        return WIDTH;
     }
     int GetHeight(){
         return HEIGHT;
@@ -133,7 +133,7 @@ class SimState{
 
         //sigma
         for(int i = 0; i < PML_LAYERS + 1; i++){
-        for(int x = i; x < W - i; x++){
+        for(int x = i; x < WIDTH - i; x++){
             for(int y = i; y < HEIGHT - i; y++){
             sigma[index_of_padded(x, y)] = 0.5 / DT * (PML_LAYERS - i)/PML_LAYERS;
             }

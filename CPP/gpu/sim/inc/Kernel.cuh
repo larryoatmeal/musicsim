@@ -27,5 +27,8 @@ __global__ void AudioKernel(
   float *audioBuffer,
   int iter
 );
+// __constant__ int listen_index;
+// __constant__ int num_excite;
+// __constant__ int p_bore_index;
 
 #endif

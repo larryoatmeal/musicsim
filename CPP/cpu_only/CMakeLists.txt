@@ -5,6 +5,7 @@ project(a4)
 # Silence warnings about deprecated GLUT functions
 if(APPLE)
     add_definitions("-Wno-deprecated-declarations")
+    include_directories(/usr/local/include)
 endif()
 
 if(UNIX)
@@ -14,6 +15,15 @@ elseif(MSVC)
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -WX")
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
 endif()
+
+if(UNIX AND NOT APPLE)
+    include_directories(/usr/include/python2.7)
+    add_definitions("-lpython2.7")
+endif()
+
+
+
+
 
 # vecmath include directory
 include_directories(vecmath/include)

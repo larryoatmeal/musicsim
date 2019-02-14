@@ -33,15 +33,11 @@ SimStateGPU::~SimStateGPU(){
   checkCudaErrors(cudaFree(bufferAux_in));
 };
 int SimStateGPU::GetWidth(){
-  return W;
+  return WIDTH;
 };
 int SimStateGPU::GetHeight(){
-  return H;
+  return HEIGHT;
 };
-float SimStateGPU::GetPressure(int x, int y){
-  return 0;
-};
-
 
 void SimStateGPU::gpu_step(){
   // Launch the kernel
@@ -92,6 +88,21 @@ std::vector<float> SimStateGPU::read_back(){
 
 }
 
+void SimStateGPU::clear(){
+  iter = 0;
+}
+
+int getIndexGlobalPrivate(int x, int y){
+  return x + (y + 2) * STRIDE_Y;
+}
+
+void SimStateGPU::setAux(int x, int y, int val){
+  int i = getIndexGlobalPrivate(x, y);
+  checkCudaErrors(cudaMemcpy(&bufferAux_in[i], &val, sizeof(val), cudaMemcpyHostToDevice));
+};
+
+
+
 void SimStateGPU::init(float *sigma, int * aux_data, int argc, char *argv[]){
   float * empty = (float *) calloc(N_TOTAL, sizeof(float));
 
@@ -130,10 +141,18 @@ void SimStateGPU::init(float *sigma, int * aux_data, int argc, char *argv[]){
   
   dimBlock.x = 16;
   dimBlock.y = 16;
-  dimGrid.x  = W/dimBlock.x;
-  dimGrid.y  = H/dimBlock.y; //for now assume this is perfect division
+  dimGrid.x  = WIDTH/dimBlock.x;
+  dimGrid.y  = HEIGHT/dimBlock.y; //for now assume this is perfect division
   printf(" set block size to %dx%d\n", dimBlock.x, dimBlock.y);
-  printf(" set grid size to %dx%d\n", dimGrid.x, dimGrid.y);      
+  printf(" set grid size to %dx%d\n", dimGrid.x, dimGrid.y);
+  
+  // int _p_bore_index = (41 + PAD_HALF) + (53 + PAD_HALF) * (STRIDE_Y);
+  // int _num_excite = 4;
+  // int _listen_index  = (155 + PAD_HALF) + (45 + PAD_HALF) * (STRIDE_Y);
+
+  // checkCudaErrors(cudaMemcpyToSymbol(listen_index, &_listen_index, sizeof(listen_index)));
+  // checkCudaErrors(cudaMemcpyToSymbol(num_excite, &_num_excite, sizeof(num_excite)));
+  // checkCudaErrors(cudaMemcpyToSymbol(p_bore_index, &_p_bore_index, sizeof(p_bore_index)));
 };
 
 
