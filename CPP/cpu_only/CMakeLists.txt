@@ -59,6 +59,18 @@ add_executable(a4 ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
 include_directories(${CMAKE_SOURCE_DIR}/../gpu/sim/inc)
 target_link_libraries(a4 vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
 
+#pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
+#target_link_libraries(pytest vecmath AudioFile)
+#target_compile_definitions(pytest PRIVATE PYTHON=1)
+#target_compile_definitions(pytest PRIVATE LOCAL=0)
+
+
+pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
+target_link_libraries(pytest vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
+target_compile_definitions(pytest PRIVATE PYTHON=1)
+target_compile_definitions(pytest PRIVATE LOCAL=0)
+
+
 #create new target called local_exec
 add_custom_target(local) # Note: without 'ALL'
 add_executable(local_exec ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
@@ -70,6 +82,3 @@ target_compile_definitions(local_exec PRIVATE LOCAL=1)
 add_dependencies(local local_exec)
 
 
-pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
-target_link_libraries(pytest vecmath AudioFile)
-target_compile_definitions(pytest PRIVATE PYTHON=1 LOCAL=1)

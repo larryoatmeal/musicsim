@@ -3,12 +3,12 @@
 
 #include <vector>
 
-#ifdef LOCAL
-#include "SimState.h"
-#else
+// #ifdef LOCAL
+// #include "SimState.h"
+// #else
 #include "Sim.h"
 
-#endif
+// #endif
 
 class Simulator{
 
@@ -23,11 +23,11 @@ public:
 
 
 private:
-  #ifdef LOCAL
-    SimState simState;
-  #else
+  // #ifdef LOCAL
+  //   SimState simState;
+  // #else
     SimStateGPU simState;
-  #endif
+  // #endif
 
 };
 

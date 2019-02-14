@@ -19,8 +19,7 @@ void SimStateGPU::step(){
 float SimStateGPU::read_pressure(){
   return 0;
 }
-SimStateGPU::SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]){
-  init(sigma, aux_data, argc, argv);
+SimStateGPU::SimStateGPU(){
   iter = 0;
 }
 SimStateGPU::~SimStateGPU(){
@@ -90,6 +89,13 @@ std::vector<float> SimStateGPU::read_back(){
 
 void SimStateGPU::clear(){
   iter = 0;
+  int size = N_TOTAL * sizeof(float);
+  checkCudaErrors(cudaMemset(bufferP_in, 0, size));
+  checkCudaErrors(cudaMemset(bufferVx_in, 0, size));
+  checkCudaErrors(cudaMemset(bufferVy_in, 0, size));
+  checkCudaErrors(cudaMemset(bufferP_out, 0, size));
+  checkCudaErrors(cudaMemset(bufferVx_out, 0, size));
+  checkCudaErrors(cudaMemset(bufferVy_out, 0, size));
 }
 
 int getIndexGlobalPrivate(int x, int y){

@@ -7,49 +7,42 @@
 
 #endif
 
-
-#ifdef LOCAL
-void Simulator::init(){
-}
-
 #ifdef PYTHON
 namespace py = pybind11;
 
 #endif
 
-std::vector<float> Simulator::run(int iter){
-  std::vector<float> v(iter);
-  for(int i = 0; i < iter; i++){
-    simState.step();
-    v.push_back(simState.read_pressure());
-  }
-  simState.clear();
-  return v;
-}
-
-void Simulator::setWall(int x, int y){
+void Simulator::init(){
   #ifdef PYTHON
-    py::print("Hello, World!"); 
+  py::print("Hello, World!"); 
   #endif
 
-  simState.setWall(x, y, 1);
-}
-void Simulator::clearWall(int x, int y){
-  simState.setWall(x, y, 0);
-}
-
-#else
-void Simulator::init(){
   SimState sim;
-  simState = SimStateGPU(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
+  sim.init_default_walls();
+  #ifdef PYTHON
+  py::print("Initialized default walls"); 
+  #endif
+  simState.init(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
+  #ifdef PYTHON
+  py::print("Initialized GPU"); 
+  #endif
 }
 std::vector<float> Simulator::run(int iter){
+  #ifdef PYTHON
+  py::print("Simulating..."); 
+  #endif
+
   for(int i = 0; i < iter; i++){
     simState.step();
   }
+  #ifdef PYTHON
+  py::print("Reading back..."); 
+  #endif
 
   std::vector<float> v = simState.read_back();
-
+  #ifdef PYTHON
+  py::print("Clearing..."); 
+  #endif
   simState.clear();
   return v;
 }
@@ -60,5 +53,78 @@ void Simulator::setWall(int x, int y){
 void Simulator::clearWall(int x, int y){
 
 }
-#endif
+
+
+
+// #ifdef LOCAL
+// void Simulator::init(){
+//     simState.init_default_walls();
+// }
+
+
+
+// std::vector<float> Simulator::run(int iter){
+//   std::vector<float> v(iter);
+//   for(int i = 0; i < iter; i++){
+//     simState.step();
+//     v.push_back(simState.read_pressure());
+//   }
+//   simState.clear();
+//   return v;
+// }
+
+// void Simulator::setWall(int x, int y){
+//   #ifdef PYTHON
+//     py::print("Hello, World!"); 
+//   #endif
+
+//   simState.setWall(x, y, 1);
+// }
+// void Simulator::clearWall(int x, int y){
+//   simState.setWall(x, y, 0);
+// }
+
+// #else
+// void Simulator::init(){
+//   #ifdef PYTHON
+//   py::print("Hello, World!"); 
+//   #endif
+
+//   SimState sim;
+//   sim.init_default_walls();
+//   #ifdef PYTHON
+//   py::print("Initialized default walls"); 
+//   #endif
+//   simState.init(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
+//   #ifdef PYTHON
+//   py::print("Initialized GPU"); 
+//   #endif
+// }
+// std::vector<float> Simulator::run(int iter){
+//   #ifdef PYTHON
+//   py::print("Simulating..."); 
+//   #endif
+
+//   for(int i = 0; i < iter; i++){
+//     simState.step();
+//   }
+//   #ifdef PYTHON
+//   py::print("Reading back..."); 
+//   #endif
+
+//   std::vector<float> v = simState.read_back();
+//   #ifdef PYTHON
+//   py::print("Clearing..."); 
+//   #endif
+//   simState.clear();
+//   return v;
+// }
+
+// void Simulator::setWall(int x, int y){
+
+// }
+// void Simulator::clearWall(int x, int y){
+
+// }
+// #endif
 

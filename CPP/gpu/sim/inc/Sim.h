@@ -6,7 +6,7 @@
 
 class SimStateGPU{
     public:
-        SimStateGPU(float *sigma, int * aux_data, int argc, char *argv[]);
+        SimStateGPU();
         void step();
         float read_pressure();
         ~SimStateGPU();
@@ -28,6 +28,8 @@ class SimStateGPU{
 
         int             *bufferAux_in    ;
         float           *bufferAudio;
+        void init(float *sigma, int * aux_data, int argc, char *argv[]);
+
     private:
         int               deviceCount;
         int               targetDevice;
@@ -36,10 +38,7 @@ class SimStateGPU{
         int             iter;
         
         void gpu_step();
-
-
-        void init(float *sigma, int * aux_data, int argc, char *argv[]);
-
+        
 };
 
 #endif

@@ -133,7 +133,8 @@ int main(int argc, char **argv) {
           std::cout << "NO GPU CONNECTED" << std::endl;
           return 0;
         #else
-          SimStateGPU simGPU(sim.GetSigma(), sim.GetAuxData(), argc, argv);
+          SimStateGPU simGPU;
+          simGPU.init(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
           for(int i = 0; i < N; i++){
               simGPU.step();
               if(i % (N/100) == 0){
