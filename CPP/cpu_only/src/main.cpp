@@ -49,8 +49,9 @@ PYBIND11_MODULE(pytest, m) {
     py::class_<Simulator>(m, "Simulator")
         .def(py::init<>())
         .def("init", &Simulator::init)
-        .def("run", &Simulator::run);
-        // .def("getName", &Pet::getName);
+        .def("run", &Simulator::run)
+        .def("setWall", &Simulator::setWall)
+        .def("clearWall", &Simulator::clearWall);
 }
 #endif
 

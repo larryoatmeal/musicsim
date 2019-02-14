@@ -234,7 +234,7 @@ class SimState{
     }
 
     void clear_grid(float * data){
-        memset(data, 0, N_TOTAL);
+        memset(data, 0, N_TOTAL * sizeof(float));
     }
 
     int index_of_padded(int x, int y){

@@ -1,9 +1,21 @@
 #include "Simulator.h"
 #include "SimState.h"
+#ifdef PYTHON
+
+#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
+
+#endif
+
+
 #ifdef LOCAL
 void Simulator::init(){
-  simState = SimState();
 }
+
+#ifdef PYTHON
+namespace py = pybind11;
+
+#endif
 
 std::vector<float> Simulator::run(int iter){
   std::vector<float> v(iter);
@@ -16,6 +28,10 @@ std::vector<float> Simulator::run(int iter){
 }
 
 void Simulator::setWall(int x, int y){
+  #ifdef PYTHON
+    py::print("Hello, World!"); 
+  #endif
+
   simState.setWall(x, y, 1);
 }
 void Simulator::clearWall(int x, int y){
@@ -39,6 +55,9 @@ std::vector<float> Simulator::run(int iter){
 }
 
 void Simulator::setWall(int x, int y){
+
+}
+void Simulator::clearWall(int x, int y){
 
 }
 #endif
