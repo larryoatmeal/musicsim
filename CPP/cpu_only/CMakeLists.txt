@@ -18,7 +18,7 @@ endif()
 
 if(UNIX AND NOT APPLE)
     include_directories(/usr/include/python2.7)
-    add_definitions("-lpython2.7")
+    add_definitions("-lpython2.7 -fPIC")
 endif()
 
 
