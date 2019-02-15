@@ -16,6 +16,8 @@ import numpy as np
 import simulation
 import threading
 import time
+import requests
+import sounddevice as sd
 
 
 # class TextureDrawer(Widget):
@@ -240,8 +242,20 @@ class KivyApp(App):
         # print normalized_audio
         write_audio("sound.wav", normalized_audio)
 
+
+    def start_gpu_sim(self):
+        resp = requests.get('http://35.226.198.237:8080/sim/50000')
+        audio = np.array(resp.json())
+        normalized = audio / np.max(np.abs(audio))
+
+        sd.play(normalized, 128000)
+        # print normalized
+
     def configure_buttons(self):
         buttonLayout = BoxLayout(orientation='vertical')
+
+        btn0 = Button(text="Run GPU")
+        btn0.bind(on_press=lambda  x: self.start_gpu_sim())
 
         btn1 = Button(text='Start')
         btn1.bind(on_press=lambda x: self.start_simulation())
@@ -252,6 +266,7 @@ class KivyApp(App):
         btn3 = Button(text='Play')
         btn3.bind(on_press=lambda x: self.play_audio())
 
+        buttonLayout.add_widget(btn0)
         buttonLayout.add_widget(btn1)
         buttonLayout.add_widget(btn2)
         buttonLayout.add_widget(btn3)
