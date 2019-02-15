@@ -2,6 +2,7 @@
 
 import pytest
 
+import re
 
 '''
 Simple and functional REST server for Python (2.7) using no dependencies beyond the Python standard library.
@@ -35,9 +36,31 @@ here = os.path.dirname(os.path.realpath(__file__))
 sim = pytest.Simulator()
 sim.init()
 
+
+
+
 def get_sim(handler):
     iter = int(urllib.unquote(handler.path[5:]))
     return sim.run(iter)
+
+
+pattern = re.compile('([0-9]+)/([0-9]+)')
+
+def parse(s):
+    m = pattern.search(s)
+    x = int(m.group(1))
+    y = int(m.group(2))
+    return (x, y)
+
+def write_sim(handler):
+    x,y = parse(urllib.unquote(handler.path))
+    sim.setWall(x,y)
+    return "DONE"
+
+def delete_sim(handler):
+    x,y = parse(urllib.unquote(handler.path))
+    sim.clearWall(x,y)
+    return "DONE"
 
 def set_record(handler):
     key = urllib.unquote(handler.path[8:])
@@ -77,7 +100,10 @@ class RESTRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             #r'^/$': {'file': 'web/index.html', 'media_type': 'text/html'},
             #r'^/records$': {'GET': get_records, 'media_type': 'application/json'},
             #r'^/record/': {'GET': get_record, 'PUT': set_record, 'DELETE': delete_record, 'media_type': 'application/json'}},
-            r'^/sim/': {'GET': get_sim, 'media_type': 'application/json'}}
+            r'^/sim/': {'GET': get_sim, 'media_type': 'application/json'},
+            r'^/delete/': {'GET': delete_sim, 'media_type': 'application/json'},
+            r'^/write/': {'GET': write_sim, 'media_type': 'application/json'}
+        }
 
         return BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 

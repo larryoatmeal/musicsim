@@ -16,8 +16,6 @@ void Simulator::init(){
   #ifdef PYTHON
   py::print("Hello, World!"); 
   #endif
-
-  SimState sim;
   sim.init_default_walls();
   #ifdef PYTHON
   py::print("Initialized default walls"); 
@@ -48,10 +46,18 @@ std::vector<float> Simulator::run(int iter){
 }
 
 void Simulator::setWall(int x, int y){
-
+  #ifdef PYTHON
+  py::print("Setting wall"); 
+  #endif
+  sim.setWall(x, y, 1);
+  simState.setAux(x, y, sim.GetAux(x, y));
 }
 void Simulator::clearWall(int x, int y){
-
+  #ifdef PYTHON
+  py::print("Clearing wall"); 
+  #endif
+  sim.setWall(x, y, 0);
+  simState.setAux(x, y, sim.GetAux(x, y));
 }
 
 

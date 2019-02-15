@@ -147,6 +147,7 @@ DRAW_MODES = [
 ]
 
 WRITE_LATCH = "WRITE_LATCH"
+WRITE_NO_LATCH = "WRITE_NOT_LATCH"
 
 
 class KivyApp(App):
@@ -161,21 +162,21 @@ class KivyApp(App):
         self.draw_mode = DRAW_EDIT
         self.cursor = [0, 0]
 
-        self.write_mode = WRITE_LATCH
+        self.write_mode = WRITE_NO_LATCH
         super(KivyApp, self).__init__(**kwargs)
         # self.mainTex = None
 
     @staticmethod
     def init_sim():
-        w = 220
-        h = 110
+        w = 256
+        h = 125
 
         wall = np.zeros([h, w])
         wall[50, 40:150] = 1
         wall[55, 40:150] = 1
-
-        wall[55, 130] = 0
-        wall[55, 100] = 0
+        #
+        # wall[55, 130] = 0
+        # wall[55, 100] = 0
 
         excitor = np.zeros([h, w])
         excitor[51:55, 40] = 1
@@ -205,12 +206,15 @@ class KivyApp(App):
     def write_cell(self):
         self.sim.wall_template[self.cursor[0], self.cursor[1]] = 1
         self.sim.update_aux_cells()
+        resp = requests.get('http://35.226.198.237:8080/write/' + str(self.cursor[1]) + '/' + str(self.cursor[0]))
+
         pass
 
     def delete_cell(self):
         self.sim.wall_template[self.cursor[0], self.cursor[1]] = 0
         self.sim.update_aux_cells()
-        pass
+        resp = requests.get('http://35.226.198.237:8080/delete/' + str(self.cursor[1]) + '/' + str(self.cursor[0]))
+        
 
     def key_action(self, *args):
         print "got a key event: %s" % list(args)

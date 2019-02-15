@@ -4,7 +4,7 @@
 #include <vector>
 
 // #ifdef LOCAL
-// #include "SimState.h"
+#include "SimState.h"
 // #else
 #include "Sim.h"
 
@@ -24,8 +24,8 @@ public:
 
 private:
   // #ifdef LOCAL
-  //   SimState simState;
   // #else
+    SimState sim;
     SimStateGPU simState;
   // #endif
 

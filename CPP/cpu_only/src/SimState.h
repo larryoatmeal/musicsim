@@ -89,6 +89,10 @@ class SimState{
         return p[index_of_padded(x, y)];
     }
 
+    int GetAux(int x, int y){
+        return aux_data[index_of_padded(x, y)];
+    }
+
     float* GetSigma(){
         return sigma;
     }
