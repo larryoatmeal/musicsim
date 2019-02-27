@@ -57,19 +57,34 @@ __global__ void FiniteDifferencesKernel(float *output,
     const int ty = ltidy + RADIUS;
 
     // Check in bounds
+
+    //can't read from here
     if ((gtidx >= dimx + RADIUS) || (gtidy >= dimy + RADIUS))
         validr = false;
 
+    //can't read or write here 
     if ((gtidx >= dimx) || (gtidy >= dimy))
         validw = false;
 
+    //outside dim + radius: can't read or write
+    //outside dim but within: can't write, but can read!
+
     // Preload the "infront" and "behind" data
+
+    //what's this for?
+
+    //preload the behind at the beginning
+    //advance z layer to where it actually starts
+    
+
+    //this loop runs RADIUS - 1 times
+    //cuz we later do another += stride_z to make it RADIUS total
     for (int i = RADIUS - 2 ; i >= 0 ; i--)
     {
-        if (validr)
+        if (validr) //if this is actually a valid read
             behind[i] = input[inputIndex];
 
-        inputIndex += stride_z;
+        inputIndex += stride_z; //
     }
 
     if (validr)
@@ -78,6 +93,9 @@ __global__ void FiniteDifferencesKernel(float *output,
     outputIndex = inputIndex;
     inputIndex += stride_z;
 
+    //by here input index should be inputIndex += RADIUS * stride_z
+
+    //now read the things that are inputIndex += stride_z ahead
     for (int i = 0 ; i < RADIUS ; i++)
     {
         if (validr)
@@ -85,6 +103,10 @@ __global__ void FiniteDifferencesKernel(float *output,
 
         inputIndex += stride_z;
     }
+
+    //inputIndex is now offset by 2 * RADIUS * stride_z
+    //inputIndex represents the furthests most position of the infront 
+
 
     // Step through the xy-planes
 #pragma unroll 9

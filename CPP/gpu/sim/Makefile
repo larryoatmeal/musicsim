@@ -276,24 +276,19 @@ endif
 Kernel.o:src/Kernel.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
+Kernel3d.o:src/Kernel3d.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
 Sim.o:src/Sim.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-FDTD3d.o:src/FDTD3d.cpp
+Sim3d.o:src/Sim3d.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
-# FDTD3dGPU.o:src/FDTD3dGPU.cu
-# 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
-
-FDTD3d: FDTD3d.o Sim.o Kernel.o
-	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-	$(EXEC) mkdir -p bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-	$(EXEC) cp $@ bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 
 #basically [output file]: [input file dependencies]
 #make will figure out the dependencies
 
-libSim.a: FDTD3d.o Sim.o Kernel.o
+libSim.a: Sim.o Kernel.o Sim3d.o Kernel3d.o
 	$(EXEC) ar rcs $@ $+
 
 testInterop: libSim.a
@@ -303,11 +298,12 @@ testInterop: libSim.a
 	# -L/usr/local/cuda/lib64 -lcudart required to get cuda to work
 	$(EXEC) g++ -o $@ test_harness.o $< -L/usr/local/cuda/lib64 -lcudart
     
-run: build
-	$(EXEC) ./FDTD3d
+# run: build
+# 	$(EXEC) ./FDTD3d
+
 
 clean:
-	rm -f FDTD3d FDTD3d.o FDTD3dGPU.o Sim.o Kernel.o
+	rm -f Sim.o Kernel.o Sim3d.o Kernel3d.o
 	rm -rf bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/FDTD3d
 
 clobber: clean

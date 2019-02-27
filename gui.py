@@ -214,7 +214,7 @@ class KivyApp(App):
         self.sim.wall_template[self.cursor[0], self.cursor[1]] = 0
         self.sim.update_aux_cells()
         resp = requests.get('http://35.226.198.237:8080/delete/' + str(self.cursor[1]) + '/' + str(self.cursor[0]))
-        
+
 
     def key_action(self, *args):
         print "got a key event: %s" % list(args)

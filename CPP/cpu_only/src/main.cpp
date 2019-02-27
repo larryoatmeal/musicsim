@@ -17,6 +17,9 @@
 #include "Simulator.h"
 
 
+#include "Sim3d.h"
+
+
 
 #ifdef PYTHON
 #include <pybind11/pybind11.h>
@@ -27,6 +30,7 @@
 #ifndef LOCAL
 #include "Sim.h"
 #endif
+
 
 
 #ifdef PYTHON
@@ -52,6 +56,20 @@ PYBIND11_MODULE(pytest, m) {
         .def("run", &Simulator::run)
         .def("setWall", &Simulator::setWall)
         .def("clearWall", &Simulator::clearWall);
+
+    py::class_<Sim3D>(m, "sim3d")
+        .def(py::init<const int &, const int &, const int &>())
+        .def("init", &Sim3D::init)
+        .def("clean", &Sim3D::clean)
+        .def("reset", &Sim3D::reset)
+        .def("setSigma", &Sim3D::setSigma)
+        .def("setWall", &Sim3D::setWall)
+        .def("readBackAux", &Sim3D::readBackAux)
+        .def("readBackAudio", &Sim3D::readBackAudio)
+        .def("readBackData", &Sim3D::readBackData)
+        .def("step", &Sim3D::step);
+
+    
 }
 #endif
 
@@ -79,6 +97,28 @@ void debug_save(std::string name, float* data, int w, int h, int i){
 int main(int argc, char **argv) {
 
 
+
+    Sim3D sim3d(32, 32, 32);
+
+    std::cout << "INIT START" << std::endl;
+    
+    sim3d.init();
+    // for(int x = 0; x < 32; x++){
+    //     for(int y = 0; y < 32; y++){
+    //         for(int z = 0; z < 32; z++){
+    //             sim3d.setWall(x, y, z, 1);
+    //         }
+    //     }
+    // }
+
+    std::vector<int> aux = sim3d.readBackAux();
+
+    std::cout << "END START" << std::endl;
+
+    // sim3d.setWall(10, 10, 10, 1);
+
+    sim3d.clean();
+    
 
     cxxopts::Options options("Simulation", "Instrument sim");
     options.add_options()

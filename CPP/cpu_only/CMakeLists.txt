@@ -57,6 +57,8 @@ SOURCE_GROUP(stb FILES ${STB_SRC})
 
 add_executable(a4 ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
 include_directories(${CMAKE_SOURCE_DIR}/../gpu/sim/inc)
+include_directories(/usr/local/cuda/include)
+
 target_link_libraries(a4 vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
 
 #pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
