@@ -35,6 +35,7 @@ Sim3D::Sim3D(int dimx, int dimy, int dimz){
   m_dimx = dimx;
   m_dimy = dimy;
   m_dimz = dimz;
+  m_scheduledWalls = std::vector< std::vector<int> >();
 };
 
 
@@ -156,16 +157,18 @@ void Sim3D::clean(){
     }
 }
 
-void Sim3D::step(){
-  AudioKernel3D<<<m_dimGrid, m_dimBlock>>>(m_bufferDst, m_bufferSrc, m_bufferAux, m_audioBuffer, m_dimx, m_dimy, m_dimz, m_i);
-  // Toggle the buffers
-  // Visual Studio 2005 does not like std::swap
-  //    std::swap<float *>(bufferSrc, bufferDst);
-  float4 *tmp = m_bufferDst;
-  m_bufferDst = m_bufferSrc;
-  m_bufferSrc = tmp;
-
-  m_i += 1;
+void Sim3D::step(int n){
+  for(int i = 0; i < n; i++){
+    AudioKernel3D<<<m_dimGrid, m_dimBlock>>>(m_bufferDst, m_bufferSrc, m_bufferAux, m_audioBuffer, m_dimx, m_dimy, m_dimz, m_i,
+    m_i_global_listener, m_i_global_p_bore, m_p_mouth);
+    // Toggle the buffers
+    // Visual Studio 2005 does not like std::swap
+    //    std::swap<float *>(bufferSrc, bufferDst);
+    float4 *tmp = m_bufferDst;
+    m_bufferDst = m_bufferSrc;
+    m_bufferSrc = tmp;
+    m_i += 1;
+  }
 }
 
 
@@ -289,6 +292,8 @@ int BETA_VY_LEVEL = BETA_VX_NORMALIZE + 2; //2
 int BETA_VY_NORMALIZE = BETA_VY_LEVEL + 2; //2
 int BETA_VZ_LEVEL = BETA_VY_NORMALIZE + 2; //2
 int BETA_VZ_NORMALIZE = BETA_VZ_LEVEL + 2; //2
+int LISTENER_SHIFT = BETA_VZ_NORMALIZE + 2;//1
+int EXCITE_SHIFT = LISTENER_SHIFT + 1;     //1
 
 int getBit(int val, int shift){
   return (val >> shift) & 1;
@@ -314,18 +319,15 @@ void Sim3D::setSigma(int x, int y, int z, int level){
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaMemcpy(&m_bufferAux[i], &newAux, sizeof(int), cudaMemcpyHostToDevice));
 }
-
-void Sim3D::setWall(int x, int y, int z, int val){
-  int g = getGlobalIndex(x, y, z);
-
+int* Sim3D::getAux(){
   int *aux = (int *) calloc(m_volumeSize, sizeof(int));
 
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaMemcpy(aux, m_bufferAux, m_volumeSize * sizeof(int), cudaMemcpyDeviceToHost));
-  
+  return aux;
+}
 
-  aux[g] = setValues(aux[g], val, ONE_BIT, BETA_SHIFT);
-
+void Sim3D::calculateAndUpdateAux(int* aux){
   int stride_x = 1;
   int stride_y = getStrideY();
   int stride_z = getStrideZ();
@@ -445,9 +447,71 @@ void Sim3D::setWall(int x, int y, int z, int val){
 
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaMemcpy(m_bufferAux, aux, m_volumeSize * sizeof(int), cudaMemcpyHostToDevice));
-
 }
 
+
+void Sim3D::setWall(int x, int y, int z, int val){
+  int g = getGlobalIndex(x, y, z);
+
+  int *aux = getAux();
+  aux[g] = setValues(aux[g], val, ONE_BIT, BETA_SHIFT);
+  calculateAndUpdateAux(aux);
+  free(aux);
+}
+
+void Sim3D::setListener(int x_l, int y_l, int z_l){
+  m_i_global_listener = getGlobalIndex(x_l, y_l, z_l);
+  // int *aux = getAux();
+
+  // //clear previous listener
+  // for(int z = 0; z < m_dimz; z++){
+  //   for(int y = 0; y < m_dimy; y++){
+  //     for(int x = 0; x < m_dimx; x++){
+  //       int g = getGlobalIndex(x, y, z);
+  //       aux[g] = setValues(aux[g], 0, ONE_BIT, LISTENER_SHIFT);
+  //     }
+  //   }
+  // }
+  // int loc = getGlobalIndex(x_l, y_l, z_l);
+  // aux[loc] = setValues(aux[loc], 1, ONE_BIT, LISTENER_SHIFT);
+  // calculateAndUpdateAux(aux); //TODO don't need to actually update
+  // free(aux);
+}
+
+void Sim3D::setPBore(int x_l, int y_l, int z_l){
+  m_i_global_p_bore = getGlobalIndex(x_l, y_l, z_l);
+  // int *aux = getAux();
+
+  // //clear previous listener
+  // for(int z = 0; z < m_dimz; z++){
+  //   for(int y = 0; y < m_dimy; y++){
+  //     for(int x = 0; x < m_dimx; x++){
+  //       int g = getGlobalIndex(x, y, z);
+  //       aux[g] = setValues(aux[g], 0, ONE_BIT, LISTENER_SHIFT);
+  //     }
+  //   }
+  // }
+
+  // int loc = getGlobalIndex(x_l, y_l, z_l);
+  // aux[loc] = setValues(aux[loc], 1, ONE_BIT, LISTENER_SHIFT);
+  // calculateAndUpdateAux(aux); //TODO don't need to actually update
+  // free(aux);
+}
+
+void Sim3D::setPressureMouth(float pressure){
+  m_p_mouth = pressure;
+}
+
+
+
+void Sim3D::setExcitor(int x, int y, int z, int val){
+  int *aux = getAux();
+  int loc = getGlobalIndex(x, y, z);
+  aux[loc] = setValues(aux[loc], val, ONE_BIT, EXCITE_SHIFT);
+  aux[loc] = setValues(aux[loc], 0, ONE_BIT, BETA_SHIFT);
+  calculateAndUpdateAux(aux); 
+  free(aux);
+}
 
 void Sim3D::reset(){
   // Toggle the buffers
@@ -467,14 +531,8 @@ void Sim3D::reset(){
   checkCudaErrors(cudaMemcpy(aux, m_bufferAux, m_volumeSize * sizeof(int), cudaMemcpyDeviceToHost));
   
   printf("SETTING BETA DEFAULT TO 1 \n");
-
-  for(int z = 0; z < m_dimz; z++){
-    for(int y = 0; y < m_dimy; y++){
-      for(int x = 0; x < m_dimx; x++){
-        int g = getGlobalIndex(x, y, z);
-        aux[g] = setValues(aux[g], 1, ONE_BIT, BETA_SHIFT); // beta init to one
-      }
-    }
+  for(int i = 0; i < m_volumeSize; i++){
+    aux[i] = setValues(aux[i], 1, ONE_BIT, BETA_SHIFT); // beta init to one
   }
 
   printf("SETTING SIGMA \n");
@@ -496,4 +554,31 @@ void Sim3D::reset(){
   checkCudaErrors(cudaDeviceSynchronize());
   checkCudaErrors(cudaMemcpy(m_bufferAux, aux, m_volumeSize * sizeof(int), cudaMemcpyHostToDevice));
   
+}
+
+void Sim3D::scheduleWall(int x, int y, int z, int val){
+  std::vector<int> v;
+  v.push_back(x);
+  v.push_back(y);
+  v.push_back(z);
+  v.push_back(val);
+
+  m_scheduledWalls.push_back(v);
+}
+
+void Sim3D::writeWalls(){
+  int* aux = getAux();
+
+  for(int i = 0; i < m_scheduledWalls.size(); i++){
+    int x = m_scheduledWalls[i][0];
+    int y = m_scheduledWalls[i][1];
+    int z = m_scheduledWalls[i][2];
+    int val = m_scheduledWalls[i][3];
+    int g = getGlobalIndex(x, y, z);
+    aux[g] = setValues(aux[g], val, ONE_BIT, BETA_SHIFT);
+  }
+
+  calculateAndUpdateAux(aux);
+
+  free(aux);
 }

@@ -288,7 +288,7 @@ Sim3d.o:src/Sim3d.cu
 #basically [output file]: [input file dependencies]
 #make will figure out the dependencies
 
-libSim.a: Sim.o Kernel.o Sim3d.o Kernel3d.o
+libSim.a: Sim3d.o Kernel3d.o
 	$(EXEC) ar rcs $@ $+
 
 testInterop: libSim.a

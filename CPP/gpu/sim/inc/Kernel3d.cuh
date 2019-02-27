@@ -23,7 +23,10 @@ __global__ void AudioKernel3D(
   const int dimx, 
   const int dimy, 
   const int dimz,
-  int iter
+  int iter,
+  int i_global_listener,
+  int i_global_p_bore,
+  float p_mouth
 );
 
 #endif

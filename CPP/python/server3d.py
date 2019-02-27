@@ -91,18 +91,63 @@ def readBackAux(handler):
   return sim3d[0].readBackAux()
 
 def step(handler):
-  sim3d[0].step()
+  args = get_args(handler)
+  if len(args) == 1:
+    sim3d[0].step(args[0])
+  else:
+    sim3d[0].step(1)
+  return "SUCCESS"
 
 def setSigma(handler):
   return get_args(handler)
 
 def setWall(handler):
-  pass
+  args = get_args(handler)
+  if len(args) != 4:
+    return None
+  sim3d[0].setWall(args[0], args[1], args[2], args[3])
+  return "SUCCESS"
 
+def scheduleWalls(handler):
+  args = get_args(handler)
+  if len(args) % 4 != 0:
+    print "BAD ARGS"
+    return None
+  for i in range(0, len(args), 4):
+    sim3d[0].scheduleWall(args[i + 0], args[i + 1], args[i + 2], args[i + 3])
+  return "SUCCESS"
 
+def writeWalls(handler):
+  sim3d[0].writeWalls()
+  return "SUCCESS"
 
+def setListener(handler):
+  args = get_args(handler)
+  if len(args) != 3:
+    return None
+  sim3d[0].setListener(args[0], args[1], args[2])
+  return "SUCCESS"
 
-
+def setExcitor(handler):
+  args = get_args(handler)
+  if len(args) != 4:
+      return None
+  sim3d[0].setExcitor(args[0], args[1], args[2], args[3])
+  return "SUCCESS"
+    
+def setPBore(handler):
+  args = get_args(handler)
+  if len(args) != 3:
+    return None
+  sim3d[0].setPBore(args[0], args[1], args[2])
+  return "SUCCESS"
+    
+def setPressureMouth(handler):
+  args = get_args(handler)
+  if len(args) != 1:
+     return None
+  sim3d[0].setPressureMouth(args[0])
+  return "SUCCESS"
 
 def rest_call_json(url, payload=None, with_payload_method='PUT'):
     'REST call with JSON decoding of the response and JSON payloads'
@@ -143,11 +188,17 @@ class RESTRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           r'^/clean/': {'GET': clean, 'media_type': 'application/json'},
           r'^/reset/': {'GET': reset, 'media_type': 'application/json'},
           r'^/setSigma/': {'GET': setSigma, 'media_type': 'application/json'},
+          r'^/step/': {'GET': step, 'media_type': 'application/json'},
           r'^/setWall/': {'GET': setWall, 'media_type': 'application/json'},
           r'^/readBackAux/': {'GET': readBackAux, 'media_type': 'application/json'},
           r'^/readBackAudio/': {'GET': readBackAudio, 'media_type': 'application/json'},
           r'^/readBackData/': {'GET': readBackData, 'media_type': 'application/json'},
-          r'^/step/': {'GET': step, 'media_type': 'application/json'},            
+          r'^/scheduleWalls/': {'GET': scheduleWalls, 'media_type': 'application/json'},
+          r'^/writeWalls/': {'GET': writeWalls, 'media_type': 'application/json'},
+          r'^/setListener/': {'GET': setListener, 'media_type': 'application/json'},     
+          r'^/setExcitor/': {'GET': setExcitor, 'media_type': 'application/json'},            
+          r'^/setPBore/': {'GET': setPBore, 'media_type': 'application/json'},
+          r'^/setPressureMouth/': {'GET': setPressureMouth, 'media_type': 'application/json'},
         }
 
         return BaseHTTPServer.BaseHTTPRequestHandler.__init__(self, *args, **kwargs)

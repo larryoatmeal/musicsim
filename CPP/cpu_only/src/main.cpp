@@ -10,15 +10,14 @@
 #include <iomanip>
 #include <stdlib.h>
 
-#include "SimState.h"
+// #include "SimState.h"
 #include <cxxopts.hpp>
 #include <cmath>
 #include "AudioFile.h"
-#include "Simulator.h"
+// #include "Simulator.h"
 
 
 #include "Sim3d.h"
-
 
 
 #ifdef PYTHON
@@ -42,7 +41,7 @@ int add(int i, int j) {
 }
 
 int test(){
-    Simulator sim;
+    // Simulator sim;
 }
 
 PYBIND11_MODULE(pytest, m) {
@@ -50,12 +49,12 @@ PYBIND11_MODULE(pytest, m) {
 
     m.def("add", &add, "A function which adds two numbers");
 
-    py::class_<Simulator>(m, "Simulator")
-        .def(py::init<>())
-        .def("init", &Simulator::init)
-        .def("run", &Simulator::run)
-        .def("setWall", &Simulator::setWall)
-        .def("clearWall", &Simulator::clearWall);
+    // py::class_<Simulator>(m, "Simulator")
+    //     .def(py::init<>())
+    //     .def("init", &Simulator::init)
+    //     .def("run", &Simulator::run)
+    //     .def("setWall", &Simulator::setWall)
+    //     .def("clearWall", &Simulator::clearWall);
 
     py::class_<Sim3D>(m, "sim3d")
         .def(py::init<const int &, const int &, const int &>())
@@ -67,9 +66,13 @@ PYBIND11_MODULE(pytest, m) {
         .def("readBackAux", &Sim3D::readBackAux)
         .def("readBackAudio", &Sim3D::readBackAudio)
         .def("readBackData", &Sim3D::readBackData)
-        .def("step", &Sim3D::step);
-
-    
+        .def("scheduleWall", &Sim3D::scheduleWall)
+        .def("writeWalls", &Sim3D::writeWalls)
+        .def("setPBore", &Sim3D::setPBore)
+        .def("setPressureMouth", &Sim3D::setPressureMouth)
+        .def("setExcitor", &Sim3D::setExcitor)
+        .def("step", &Sim3D::step)
+        .def("setListener", &Sim3D::setListener);        
 }
 #endif
 
@@ -95,191 +98,188 @@ void debug_save(std::string name, float* data, int w, int h, int i){
 
 
 int main(int argc, char **argv) {
+    // Sim3D sim3d(32, 32, 32);
 
-
-
-    Sim3D sim3d(32, 32, 32);
-
-    std::cout << "INIT START" << std::endl;
+    // std::cout << "INIT START" << std::endl;
     
-    sim3d.init();
-    // for(int x = 0; x < 32; x++){
-    //     for(int y = 0; y < 32; y++){
-    //         for(int z = 0; z < 32; z++){
-    //             sim3d.setWall(x, y, z, 1);
-    //         }
-    //     }
+    // sim3d.init();
+    // // for(int x = 0; x < 32; x++){
+    // //     for(int y = 0; y < 32; y++){
+    // //         for(int z = 0; z < 32; z++){
+    // //             sim3d.setWall(x, y, z, 1);
+    // //         }
+    // //     }
+    // // }
+
+    // std::vector<int> aux = sim3d.readBackAux();
+
+    // std::cout << "END START" << std::endl;
+
+    // // sim3d.setWall(10, 10, 10, 1);
+
+    // sim3d.clean();
+    
+
+    // cxxopts::Options options("Simulation", "Instrument sim");
+    // options.add_options()
+    // ("h,help", "Print help")
+    // ("f,file", "File name", cxxopts::value<std::string>())
+    // ("d,debug", "Debug images")
+    // ("c,cpu", "cpu version")
+    // ("i,inspect", "full inspect")
+
+    // ("n,samples", "Number samples", cxxopts::value<int>(), "N")
+
+    // ;
+    // cxxopts::ParseResult result = options.parse(argc, argv);
+
+    // if (result.count("help"))
+    // {
+    //   std::cout << options.help({"", "Group"}) << std::endl;
+    //   exit(0);
     // }
 
-    std::vector<int> aux = sim3d.readBackAux();
 
-    std::cout << "END START" << std::endl;
+    // bool debug = result.count("debug");
+    // if(result.count("debug")){
+    //     std::cout << "DEBUG MODE: ON" << std::endl;
+    // }
 
-    // sim3d.setWall(10, 10, 10, 1);
+    // bool cpu = result.count("cpu");
+    // if(result.count("cpu")){
+    //     std::cout << "CPU_ONLY: ON" << std::endl;
+    // }
 
-    sim3d.clean();
+    // bool csv_out = result.count("inspect");
+    // if(csv_out){
+    //     std::cout << "CSV_OUT: ON" << std::endl;
+    // }
+
+    // SimState sim;
+    // sim.init_default_walls();
+
+    // std::vector<float> audioBuffer;
+
+    // int N = 128000;
+    // if (result.count("samples"))
+    // {
+    //     N = result["samples"].as<int>();
+    // }
+    // std::cout << "N = " << N << std::endl;
     
 
-    cxxopts::Options options("Simulation", "Instrument sim");
-    options.add_options()
-    ("h,help", "Print help")
-    ("f,file", "File name", cxxopts::value<std::string>())
-    ("d,debug", "Debug images")
-    ("c,cpu", "cpu version")
-    ("i,inspect", "full inspect")
-
-    ("n,samples", "Number samples", cxxopts::value<int>(), "N")
-
-    ;
-    cxxopts::ParseResult result = options.parse(argc, argv);
-
-    if (result.count("help"))
-    {
-      std::cout << options.help({"", "Group"}) << std::endl;
-      exit(0);
-    }
-
-
-    bool debug = result.count("debug");
-    if(result.count("debug")){
-        std::cout << "DEBUG MODE: ON" << std::endl;
-    }
-
-    bool cpu = result.count("cpu");
-    if(result.count("cpu")){
-        std::cout << "CPU_ONLY: ON" << std::endl;
-    }
-
-    bool csv_out = result.count("inspect");
-    if(csv_out){
-        std::cout << "CSV_OUT: ON" << std::endl;
-    }
-
-    SimState sim;
-    sim.init_default_walls();
-
-    std::vector<float> audioBuffer;
-
-    int N = 128000;
-    if (result.count("samples"))
-    {
-        N = result["samples"].as<int>();
-    }
-    std::cout << "N = " << N << std::endl;
-    
-
-    if(!cpu){
-        #ifdef LOCAL
-          std::cout << "NO GPU CONNECTED" << std::endl;
-          return 0;
-        #else
-          SimStateGPU simGPU;
-          simGPU.init(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
-          for(int i = 0; i < N; i++){
-              simGPU.step();
-              if(i % (N/100) == 0){
-                  std::cout << i * 100 /N << "%" << std::endl;
-              }
-          }
-          audioBuffer = simGPU.read_back();
-        #endif
-    }
-    else{
+    // if(!cpu){
+    //     #ifdef LOCAL
+    //       std::cout << "NO GPU CONNECTED" << std::endl;
+    //       return 0;
+    //     #else
+    //       SimStateGPU simGPU;
+    //       simGPU.init(sim.GetSigma(), sim.GetAuxData(), 0, NULL);
+    //       for(int i = 0; i < N; i++){
+    //           simGPU.step();
+    //           if(i % (N/100) == 0){
+    //               std::cout << i * 100 /N << "%" << std::endl;
+    //           }
+    //       }
+    //       audioBuffer = simGPU.read_back();
+    //     #endif
+    // }
+    // else{
         
 
-        int SKIP = 1000;
-        std::vector<std::string> images;
+    //     int SKIP = 1000;
+    //     std::vector<std::string> images;
 
-        audioBuffer = std::vector<float>(N);
-        for(int i = 0; i < N; i++){
-            sim.step();
+    //     audioBuffer = std::vector<float>(N);
+    //     for(int i = 0; i < N; i++){
+    //         sim.step();
 
-            audioBuffer[i] = sim.read_pressure();
-            if(i % (N/100) == 0){
-                std::cout << i * 100 /N << "%" << std::endl;
-            }
+    //         audioBuffer[i] = sim.read_pressure();
+    //         if(i % (N/100) == 0){
+    //             std::cout << i * 100 /N << "%" << std::endl;
+    //         }
 
-            if(csv_out){
-                // std::cout << "CSV_OUT" << std::endl;
-                debug_save("p", sim.p_prev, sim.GetWidth(), sim.GetHeight(), i);
-                debug_save("v_x", sim.v_x_prev, sim.GetWidth(), sim.GetHeight(), i);
-                debug_save("v_y", sim.v_y_prev, sim.GetWidth(), sim.GetHeight(), i);
-                debug_save("beta", sim.beta, sim.GetWidth(), sim.GetHeight(), i);
+    //         if(csv_out){
+    //             // std::cout << "CSV_OUT" << std::endl;
+    //             debug_save("p", sim.p_prev, sim.GetWidth(), sim.GetHeight(), i);
+    //             debug_save("v_x", sim.v_x_prev, sim.GetWidth(), sim.GetHeight(), i);
+    //             debug_save("v_y", sim.v_y_prev, sim.GetWidth(), sim.GetHeight(), i);
+    //             debug_save("beta", sim.beta, sim.GetWidth(), sim.GetHeight(), i);
 
-            }
+    //         }
 
-            if(debug){
-                if(i % SKIP == 0){
-                    // std::cout << (float) i/N << std::endl;
-                    std::stringstream formattedNumber;
+    //         if(debug){
+    //             if(i % SKIP == 0){
+    //                 // std::cout << (float) i/N << std::endl;
+    //                 std::stringstream formattedNumber;
 
-                    formattedNumber << std::setfill('0') << std::setw(6) << i/SKIP;
+    //                 formattedNumber << std::setfill('0') << std::setw(6) << i/SKIP;
 
-                    std::string s = "out/img" + formattedNumber.str() + ".png";
-                    Image image(sim.GetWidth(), sim.GetHeight());
-                    for(int x = 0; x < sim.GetWidth(); x++){
-                        for(int y = 0; y < sim.GetHeight(); y++){
-                            float p = sim.GetPressure(x, y);
-                            float col = std::max(std::min(p/1000, 1.0f), -1.0f);
-                            if(col < 0){
-                                Vector3f color(0, -col, 0);
-                                image.setPixel(x, y, color);
-                            }else{
-                                Vector3f color(col, 0, 0);
-                                image.setPixel(x, y, color);
-                            }
-                        }
-                    }
-                    images.push_back(s);
+    //                 std::string s = "out/img" + formattedNumber.str() + ".png";
+    //                 Image image(sim.GetWidth(), sim.GetHeight());
+    //                 for(int x = 0; x < sim.GetWidth(); x++){
+    //                     for(int y = 0; y < sim.GetHeight(); y++){
+    //                         float p = sim.GetPressure(x, y);
+    //                         float col = std::max(std::min(p/1000, 1.0f), -1.0f);
+    //                         if(col < 0){
+    //                             Vector3f color(0, -col, 0);
+    //                             image.setPixel(x, y, color);
+    //                         }else{
+    //                             Vector3f color(col, 0, 0);
+    //                             image.setPixel(x, y, color);
+    //                         }
+    //                     }
+    //                 }
+    //                 images.push_back(s);
 
-                    image.savePNG(s);
-                }
-            }
-        }
+    //                 image.savePNG(s);
+    //             }
+    //         }
+    //     }
 
-        if(debug){
-            std::stringstream video_cmd;
-            int framerate = 24;
-            video_cmd << "ffmpeg" << " " << "-framerate" << " " << 24 << " -i out/img%06d.png -pix_fmt yuv420p out/output.mp4";
-            std::string video = video_cmd.str();
-            std::cout << video << std::endl;
+    //     if(debug){
+    //         std::stringstream video_cmd;
+    //         int framerate = 24;
+    //         video_cmd << "ffmpeg" << " " << "-framerate" << " " << 24 << " -i out/img%06d.png -pix_fmt yuv420p out/output.mp4";
+    //         std::string video = video_cmd.str();
+    //         std::cout << video << std::endl;
 
-            system(video_cmd.str().c_str());
+    //         system(video_cmd.str().c_str());
 
-            for(int i = 0; i < images.size(); i++){
-                std::string s = images[i];
-                std::string rm = "rm " + s;
-                system(rm.c_str());
-            }
-        }
+    //         for(int i = 0; i < images.size(); i++){
+    //             std::string s = images[i];
+    //             std::string rm = "rm " + s;
+    //             system(rm.c_str());
+    //         }
+    //     }
 
-    }
-    //normalized audio
-    float max_amp = 0;
-    for(int i = 0; i < audioBuffer.size(); i++){
-        float amp = std::abs(audioBuffer[i]);
+    // }
+    // //normalized audio
+    // float max_amp = 0;
+    // for(int i = 0; i < audioBuffer.size(); i++){
+    //     float amp = std::abs(audioBuffer[i]);
 
-        max_amp = std::max(amp, max_amp);
-    }
-    for(int i = 0; i < audioBuffer.size(); i++){
-        audioBuffer[i] /= max_amp;
-    }
+    //     max_amp = std::max(amp, max_amp);
+    // }
+    // for(int i = 0; i < audioBuffer.size(); i++){
+    //     audioBuffer[i] /= max_amp;
+    // }
 
-    std::cout << "FINISHED" << std::endl;
+    // std::cout << "FINISHED" << std::endl;
 
 
-    int SUBSAMPLED_N = N/ SAMPLE_EVERY_N;
+    // int SUBSAMPLED_N = N/ SAMPLE_EVERY_N;
 
-    AudioFile<float> audioFile;
-    AudioFile<float>::AudioBuffer buffer;
-    buffer.resize (1);
-    buffer[0].resize (SUBSAMPLED_N);
-    for(int i = 0; i < SUBSAMPLED_N; i++){
-        buffer[0][i] = audioBuffer[i * SAMPLE_EVERY_N];
-    }
-    audioFile.setAudioBuffer(buffer);
-    audioFile.printSummary();
+    // AudioFile<float> audioFile;
+    // AudioFile<float>::AudioBuffer buffer;
+    // buffer.resize (1);
+    // buffer[0].resize (SUBSAMPLED_N);
+    // for(int i = 0; i < SUBSAMPLED_N; i++){
+    //     buffer[0][i] = audioBuffer[i * SAMPLE_EVERY_N];
+    // }
+    // audioFile.setAudioBuffer(buffer);
+    // audioFile.printSummary();
 
-    audioFile.save ("out/audio.wav");
+    // audioFile.save ("out/audio.wav");
   return 0;
 }

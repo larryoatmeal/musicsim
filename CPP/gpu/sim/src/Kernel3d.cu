@@ -12,16 +12,15 @@
 
 
 
-
+ #include "constants.h"
  #include "Kernel3dGPU.h"
  #include <cooperative_groups.h>
  
  namespace cg = cooperative_groups;
  
  // Note: If you change the RADIUS, you should also change the unrolling below
- #define RADIUS 4
- 
- __constant__ float stencil[RADIUS + 1];
+
+//  __constant__ float stencil[RADIUS + 1];
  
  __global__ void AudioKernel3D(
   float4 *input,
@@ -31,7 +30,10 @@
   const int dimx, 
   const int dimy, 
   const int dimz,
-  int iter
+  int iter,
+  int i_global_listener,
+  int i_global_p_bore,
+  float p_mouth
 )
  {
      bool validr = true;
@@ -133,7 +135,7 @@
  
          behind[0] = current;
          current = infront[0];
- #pragma unroll 4
+ #pragma unroll 2
  
          for (int i = 0 ; i < RADIUS - 1 ; i++)
              infront[i] = infront[i + 1];

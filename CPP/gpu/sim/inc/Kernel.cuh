@@ -24,8 +24,7 @@ __global__ void AudioKernel(
   float *p,
   int *aux,
   float *sigma,
-  float *audioBuffer,
-  int iter
+  float *audioBuffer
 );
 // __constant__ int listen_index;
 // __constant__ int num_excite;
