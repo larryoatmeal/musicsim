@@ -43,7 +43,6 @@ set(CPP_FILES
     ${SRC_DIR}main.cpp
     ${SRC_DIR}stb.cpp
     ${SRC_DIR}Image.cpp
-    ${SRC_DIR}Simulator.cpp
     )
 
 set(CPP_HEADERS
