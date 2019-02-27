@@ -16,6 +16,7 @@ bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char 
     printf(" cudaGetDeviceCount\n");
     checkCudaErrors(cudaGetDeviceCount(&deviceCount));
 
+
     // Select target device (device 0 by default)
     targetDevice = findCudaDevice(argc, (const char **)argv);
 
@@ -273,27 +274,6 @@ int setValues(int original, int valueToInsert, int mask, int shift){
   int bit_mask = mask << shift;
   return (original & (~bit_mask)) | (valueToInsert << shift);
 }
-
-
-
-int ONE_BIT = 1;
-int TWO_BIT = 3; //0b11
-int THREE_BIT = 7; //0b111
-int FOUR_BIT = 15; //0b1111
-
-
-
-//shifts
-int SIGMA_SHIFT = 0; //3
-int BETA_SHIFT = SIGMA_SHIFT + 3; //1
-int BETA_VX_LEVEL = BETA_SHIFT + 1; //2
-int BETA_VX_NORMALIZE = BETA_VX_LEVEL + 2; //2
-int BETA_VY_LEVEL = BETA_VX_NORMALIZE + 2; //2
-int BETA_VY_NORMALIZE = BETA_VY_LEVEL + 2; //2
-int BETA_VZ_LEVEL = BETA_VY_NORMALIZE + 2; //2
-int BETA_VZ_NORMALIZE = BETA_VZ_LEVEL + 2; //2
-int LISTENER_SHIFT = BETA_VZ_NORMALIZE + 2;//1
-int EXCITE_SHIFT = LISTENER_SHIFT + 1;     //1
 
 int getBit(int val, int shift){
   return (val >> shift) & 1;

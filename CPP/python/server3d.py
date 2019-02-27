@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import pytest
-
+import math
 import re
 
 '''
@@ -85,7 +85,13 @@ def readBackAudio(handler):
   return sim3d[0].readBackAudio()
 
 def readBackData(handler):
-  return sim3d[0].readBackData()
+  data = sim3d[0].readBackData()
+  for i in range(len(data)):
+    for j in range(4):
+      if math.isnan(data[i][j]):
+        data[i][j] = 1000000000
+  return data
+      
 
 def readBackAux(handler):
   return sim3d[0].readBackAux()

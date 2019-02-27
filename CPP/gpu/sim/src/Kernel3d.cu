@@ -22,6 +22,41 @@
 
 //  __constant__ float stencil[RADIUS + 1];
  
+__device__ int getBitsCUDA(int val, int shift, int mask){
+    return (val >> shift) & mask;
+}
+
+__device__ float getSigmaCUDA(int aux){
+    int sigmaN = getBitsCUDA(aux, SIGMA_SHIFT, THREE_BIT);
+    return PML_SCALE * (sigmaN);
+}
+__device__ int getBetaCUDA(int aux){
+    return getBitsCUDA(aux, BETA_SHIFT, ONE_BIT);
+}
+
+__device__ int getExcitorCUDA(int aux){
+    return getBitsCUDA(aux, EXCITE_SHIFT, ONE_BIT);
+}
+
+__device__ float pressureStep(
+    float p,
+    float v_x,
+    float v_x_left,
+    float v_y,
+    float v_y_up,
+    float v_z,
+    float v_z_behind,
+    int beta,
+    float sigma  
+)
+  {
+    float divergence = v_x + v_y + v_z - v_x_left - v_y_up - v_z_behind;
+    float p_denom = 1 + (1 - beta + sigma) * DT;
+    return (p - COEFF_DIVERGENCE * divergence)/p_denom;
+  }
+
+
+
  __global__ void AudioKernel3D(
   float4 *input,
   float4 *output,
@@ -175,6 +210,134 @@
          tile[ty][tx] = current;
          cg::sync(cta);
  
+
+
+         int aux = inputAux[inputIndex];
+         int auxRight = inputAux[inputIndex + 1];
+         int auxDown =  inputAux[inputIndex + stride_y];
+         int auxInfront = inputAux[inputIndex + stride_z];
+
+        
+         float4 value = current;
+
+         float4 valueLeft = tile[ty][tx - 1];
+         float4 valueRight = tile[ty][tx + 1];
+         float4 valueUp = tile[ty - 1][tx];
+         float4 valueDown = tile[ty + 1][tx];
+         float4 valueInfront = infront[0];
+         float4 valueBehind = behind[0];
+
+         float4 valueRightUp = tile[ty - 1][tx + 1];
+         float4 valueRightBehind = input[inputIndex + 1 - stride_z]; //fix: expensive global memory load
+
+         float4 valueDownLeft = tile[ty + 1][tx - 1];
+         float4 valueDownBehind = input[inputIndex + stride_y - stride_z]; //fix: expensive global memory load
+         
+         float4 valueInfrontLeft = input[inputIndex - 1 + stride_z]; //fix
+         float4 valueInfrontUp = input[inputIndex - stride_y + stride_z]; //fix
+
+         
+        float newPressure = pressureStep(
+            value.x, 
+            value.y, valueLeft.y, //don't be confused, v_x is y oops
+            value.z, valueUp.z,
+            value.w, valueBehind.w,
+            getBetaCUDA(aux),
+            getSigmaCUDA(aux)
+        );
+
+        float newPressureRight = pressureStep(
+            valueRight.x, 
+            valueRight.y, value.y, //don't be confused, v_x is y oops
+            valueRight.z, valueRightUp.z,
+            valueRight.w, valueRightBehind.w,
+            getBetaCUDA(auxRight),
+            getSigmaCUDA(auxRight)
+        );
+
+        float newPressureDown = pressureStep(
+            valueDown.x, 
+            valueDown.y, valueDownLeft.y, //don't be confused, v_x is y oops
+            valueDown.z, value.z,
+            valueDown.w, valueDownBehind.w,
+            getBetaCUDA(auxDown),
+            getSigmaCUDA(auxDown)
+        );
+
+        float newPressureInfront = pressureStep(
+            valueInfront.x, 
+            valueInfront.y, valueInfrontLeft.y, //don't be confused, v_x is y oops
+            valueInfront.z, valueInfrontUp.z,
+            valueInfront.w, value.w,
+            getBetaCUDA(auxInfront),
+            getSigmaCUDA(auxInfront)
+        );
+        
+
+
+        int isExcitor = getExcitorCUDA(aux);
+        
+
+        
+        int beta_vx_dir =     getBitsCUDA(aux, BETA_VX_LEVEL, TWO_BIT) - 1;
+        int beta_vx_n   =     getBitsCUDA(aux, BETA_VX_NORMALIZE, TWO_BIT);
+        int beta_vy_dir =     getBitsCUDA(aux, BETA_VY_LEVEL, TWO_BIT) - 1; 
+        int beta_vy_n   =     getBitsCUDA(aux, BETA_VY_NORMALIZE, TWO_BIT);
+        int beta_vz_dir   =   getBitsCUDA(aux, BETA_VZ_LEVEL, TWO_BIT) - 1;
+        int beta_vz_n   =     getBitsCUDA(aux, BETA_VZ_NORMALIZE, TWO_BIT);
+
+        //if beta_vx_dir = 1, selects first term, if -1 selects other term
+        float vb_x = (max(beta_vx_dir, 0) * value.x + min(beta_vx_dir, 0) * valueRight.x) * ADMITTANCE;
+        float vb_y = (max(beta_vy_dir, 0) * value.x + min(beta_vy_dir, 0) * valueDown.x) * ADMITTANCE;
+        float vb_z = 0;
+
+        if(isExcitor == 1){
+            float delta_p = max(p_mouth - input[i_global_p_bore].x, 0.0f);
+            float excitation = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF;
+            vb_z += excitation;
+        }else{
+            vb_z += (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
+        }
+        
+        int sigma = getSigmaCUDA(aux);
+
+        int beta_x = beta_vx_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        float grad_x = valueRight.x - value.x;
+        float sigma_prime_dt_x = (1 - beta_x + sigma) * DT;
+        float current_vx = value.y;
+        // float new_vx = beta_x * ( current_vx  - COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
+
+        float new_vx = (beta_x - beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
+
+        int beta_y = beta_vy_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        float grad_y = valueDown.x - value.x;
+        float sigma_prime_dt_y = (1 - beta_y + sigma) * DT;
+        float current_vy = value.z;
+
+        float new_vy = (beta_y - beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
+
+
+        int beta_z = beta_vz_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        float grad_z = valueInfront.x - value.x;
+        float sigma_prime_dt_z = (1 - beta_z + sigma) * DT;
+        float current_vz = value.w;
+
+        float new_vz = (beta_z - beta_z * COEFF_GRADIENT * grad_z + sigma_prime_dt_z * vb_z)/(beta_z + sigma_prime_dt_z);
+
+        value.x = newPressure;
+        value.y = new_vx;
+        value.z = new_vy;
+        value.w = new_vz;
+
+        // value.x = beta_x;
+        // value.y = beta_y;
+        // value.z = beta_z;
+        // value.w = sigma;
+
+
+        if(validw)
+            output[outputIndex] = value;
+
 //          // Compute the output value
 //          float4 value = stencil[0] * current;
 //  #pragma unroll 4
