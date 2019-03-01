@@ -2,16 +2,21 @@
 #define _CONSTANTS_
 
 #define RADIUS 2
-#define PML 5
+#define PML 7
 
 #define SAMPLING_HZ (176400.0)
 
-#define DT (1/SAMPLING_HZ)
 
 #define Cs 3.4723e2 //speed of sound
 
 #define SQRT_3 1.73205080757
-#define DS (DT * Cs * SQRT_3)
+
+#define DT (1/SAMPLING_HZ)
+#define DS (DT * Cs * SQRT_3 * 1.5) 
+
+// #define DS 1e-3
+// #define DT (DS/Cs/SQRT_3/100)
+
 
 #define ZN 7357.0
 #define ADMITTANCE (1.0/ZN)

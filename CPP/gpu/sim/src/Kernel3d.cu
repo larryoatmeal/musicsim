@@ -56,6 +56,40 @@ __device__ float pressureStep(
   }
 
 
+// __device__ float pressureStep2(
+//     int i,
+//     float4 *input,
+//     int *aux
+//     int stride_x,
+//     int stride_y
+// ){
+//     float p = input[i].x;
+//     float divergence = 
+//         input[i].y - input[i - 1].y 
+//         + input[i].z - input[i - stride_y].z 
+//         + input[i].w - input[i - stride_z].w;
+//     float sigma = getSigmaCUDA(aux[i]);
+//     float beta = getBetaCUDA(aux[i]);
+//     float sigma_prime = 1  - beta + sigma;
+//     float p_next = (p - RHO * Cs * Cs * DT  * divergence)/(1 + sigma_prime * DT);
+
+//     return p_next;
+// }
+
+// __device__ float vStep2(
+//     int i,
+//     float4 *input,
+//     int *aux
+//     int stride
+// ){
+//     float v = input[i].y;
+
+//     float beta = min(getBetaCUDA(aux[i]), getBetaCUDA(aux[i + stride]));
+//     float grad_x = 
+// }
+
+
+
 
  __global__ void AudioKernel3D(
   float4 *input,
@@ -210,12 +244,12 @@ __device__ float pressureStep(
          tile[ty][tx] = current;
          cg::sync(cta);
  
+    
 
-
-         int aux = inputAux[inputIndex];
-         int auxRight = inputAux[inputIndex + 1];
-         int auxDown =  inputAux[inputIndex + stride_y];
-         int auxInfront = inputAux[inputIndex + stride_z];
+         int aux = inputAux[outputIndex];
+         int auxRight = inputAux[outputIndex + 1];
+         int auxDown =  inputAux[outputIndex + stride_y];
+         int auxInfront = inputAux[outputIndex + stride_z];
 
         
          float4 value = current;
@@ -228,15 +262,17 @@ __device__ float pressureStep(
          float4 valueBehind = behind[0];
 
          float4 valueRightUp = tile[ty - 1][tx + 1];
-         float4 valueRightBehind = input[inputIndex + 1 - stride_z]; //fix: expensive global memory load
+         float4 valueRightBehind = input[outputIndex + 1 - stride_z]; //fix: expensive global memory load
 
          float4 valueDownLeft = tile[ty + 1][tx - 1];
-         float4 valueDownBehind = input[inputIndex + stride_y - stride_z]; //fix: expensive global memory load
+         float4 valueDownBehind = input[outputIndex + stride_y - stride_z]; //fix: expensive global memory load
          
-         float4 valueInfrontLeft = input[inputIndex - 1 + stride_z]; //fix
-         float4 valueInfrontUp = input[inputIndex - stride_y + stride_z]; //fix
 
-         
+
+
+         float4 valueInfrontLeft = input[outputIndex - 1 + stride_z]; //fix
+         float4 valueInfrontUp = input[outputIndex - stride_y + stride_z]; //fix
+
         float newPressure = pressureStep(
             value.x, 
             value.y, valueLeft.y, //don't be confused, v_x is y oops
@@ -245,6 +281,11 @@ __device__ float pressureStep(
             getBetaCUDA(aux),
             getSigmaCUDA(aux)
         );
+
+
+        // if(abs(input[outputIndex + 1].x - valueRight.x) > 0.00001){
+        //     newPressure = 0;
+        // }
 
         float newPressureRight = pressureStep(
             valueRight.x, 
@@ -286,53 +327,57 @@ __device__ float pressureStep(
         int beta_vz_dir   =   getBitsCUDA(aux, BETA_VZ_LEVEL, TWO_BIT) - 1;
         int beta_vz_n   =     getBitsCUDA(aux, BETA_VZ_NORMALIZE, TWO_BIT);
 
-        //if beta_vx_dir = 1, selects first term, if -1 selects other term
+        // float vb_x = 0;
+        // float vb_y = 0;
+        // float vb_z = 0;
+
+
+
+        // if beta_vx_dir = 1, selects first term, if -1 selects other term
         float vb_x = (max(beta_vx_dir, 0) * value.x + min(beta_vx_dir, 0) * valueRight.x) * ADMITTANCE;
         float vb_y = (max(beta_vy_dir, 0) * value.x + min(beta_vy_dir, 0) * valueDown.x) * ADMITTANCE;
-        float vb_z = 0;
+        float vb_z = (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
 
         if(isExcitor == 1){
             float delta_p = max(p_mouth - input[i_global_p_bore].x, 0.0f);
             float excitation = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF;
             vb_z += excitation;
-        }else{
-            vb_z += (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
         }
+
+        // else{
+        //     vb_z += (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
+        // }
+
         
         int sigma = getSigmaCUDA(aux);
 
         int beta_x = beta_vx_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
-        float grad_x = valueRight.x - value.x;
+        float grad_x = newPressureRight - newPressure;
         float sigma_prime_dt_x = (1 - beta_x + sigma) * DT;
         float current_vx = value.y;
         // float new_vx = beta_x * ( current_vx  - COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
 
-        float new_vx = (beta_x - beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
+        float new_vx = (beta_x * current_vx - beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
 
         int beta_y = beta_vy_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
-        float grad_y = valueDown.x - value.x;
+        float grad_y = newPressureDown - newPressure;
         float sigma_prime_dt_y = (1 - beta_y + sigma) * DT;
         float current_vy = value.z;
 
-        float new_vy = (beta_y - beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
+        float new_vy = (beta_y * current_vy - beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
 
 
         int beta_z = beta_vz_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
-        float grad_z = valueInfront.x - value.x;
+        float grad_z = newPressureInfront - newPressure;
         float sigma_prime_dt_z = (1 - beta_z + sigma) * DT;
         float current_vz = value.w;
 
-        float new_vz = (beta_z - beta_z * COEFF_GRADIENT * grad_z + sigma_prime_dt_z * vb_z)/(beta_z + sigma_prime_dt_z);
+        float new_vz = (beta_z * current_vz  - beta_z * COEFF_GRADIENT * grad_z + sigma_prime_dt_z * vb_z)/(beta_z + sigma_prime_dt_z);
 
         value.x = newPressure;
         value.y = new_vx;
         value.z = new_vy;
         value.w = new_vz;
-
-        // value.x = beta_x;
-        // value.y = beta_y;
-        // value.z = beta_z;
-        // value.w = sigma;
 
 
         if(validw)

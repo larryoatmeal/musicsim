@@ -111,6 +111,8 @@ def vb_step(p, excitation_mode, p_mouth, p_bore, excitor_cells, num_excite_cells
         # facing_down_toward_wall = -1 * shift(facing_up_toward_wall, DIR_UP)
 
         vb_y_wall = facing_up_toward_wall + facing_down_toward_wall
+        # vb_y_wall = np.zeros(wall_cells.shape)
+
 
         vb_x = vb_x_wall + vb_x_excitor
         vb_y = vb_y_wall
