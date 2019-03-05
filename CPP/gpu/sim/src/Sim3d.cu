@@ -58,6 +58,54 @@ void Sim3D::init(){
   dim3              dimBlock;
   dim3              dimGrid;
 
+
+
+  // size_t volumeSize;
+  // memsize_t memsize;
+
+  // const float lowerBound = 0.0f;
+  // const float upperBound = 1.0f;
+
+  // Determine default dimensions
+  printf("Set-up, based upon target device GMEM size...\n");
+  // Get the memory size of the target device
+  printf(" getTargetDeviceGlobalMemSize\n");
+  getTargetDeviceGlobalMemSize(&memsize, argc, argv);
+
+  // We can never use all the memory so to keep things simple we aim to
+  // use around half the total memory
+  // memsize /= 2;
+
+  // Most of our memory use is taken up by the input and output buffers -
+  // two buffers of equal size - and for simplicity the volume is a cube:
+  //   dim = floor( (N/2)^(1/3) )
+  // defaultDim = (int)floor(pow((memsize / (2.0 * sizeof(float))), 1.0/3.0));
+
+  // By default, make the volume edge size an integer multiple of 128B to
+  // improve performance by coalescing memory accesses, in a real
+  // application it would make sense to pad the lines accordingly
+  // int roundTarget = 128 / sizeof(float);
+  // defaultDim = defaultDim / roundTarget * roundTarget;
+  // defaultDim -= k_radius_default * 2;
+
+  // // Check dimension is valid
+  // if (defaultDim < k_dim_min)
+  // {
+  //     printf("insufficient device memory (maximum volume on device is %d, must be between %d and %d).\n", defaultDim, k_dim_min, k_dim_max);
+  //     exit(EXIT_FAILURE);
+  // }
+  // else if (defaultDim > k_dim_max)
+  // {
+  //     defaultDim = k_dim_max;
+  // }
+
+  // // For QA testing, override default volume size
+  // if (checkCmdLineFlag(argc, argv, "qatest"))
+  // {
+  //     defaultDim = MIN(defaultDim, k_dim_qa);
+  // }
+
+
   // Ensure that the inner data starts on a 128B boundary
   // Note volumesize already includes padding from the radius!
   const int padding = (128 / sizeof(float4)) - RADIUS;
