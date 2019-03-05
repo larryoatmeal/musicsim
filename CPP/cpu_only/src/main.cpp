@@ -98,7 +98,7 @@ void debug_save(std::string name, float* data, int w, int h, int i){
 
 
 int main(int argc, char **argv) {
-    Sim3D sim3d(32, 32, 32);
+    Sim3D sim3d(128, 128, 128);
 
     std::cout << "INIT START" << std::endl;
     
