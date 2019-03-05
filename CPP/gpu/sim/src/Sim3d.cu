@@ -61,7 +61,7 @@ void Sim3D::init(){
 
 
   // size_t volumeSize;
-  // memsize_t memsize;
+  memsize_t memsize;
 
   // const float lowerBound = 0.0f;
   // const float upperBound = 1.0f;
@@ -70,7 +70,7 @@ void Sim3D::init(){
   printf("Set-up, based upon target device GMEM size...\n");
   // Get the memory size of the target device
   printf(" getTargetDeviceGlobalMemSize\n");
-  getTargetDeviceGlobalMemSize(&memsize, argc, argv);
+  getTargetDeviceGlobalMemSize(&memsize, 0, 0);
 
   // We can never use all the memory so to keep things simple we aim to
   // use around half the total memory
