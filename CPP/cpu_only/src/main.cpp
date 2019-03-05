@@ -27,7 +27,7 @@
 
 
 #ifndef LOCAL
-#include "Sim.h"
+// #include "Sim.h"
 #endif
 
 
@@ -98,11 +98,12 @@ void debug_save(std::string name, float* data, int w, int h, int i){
 
 
 int main(int argc, char **argv) {
-    // Sim3D sim3d(32, 32, 32);
+    Sim3D sim3d(32, 32, 32);
 
-    // std::cout << "INIT START" << std::endl;
+    std::cout << "INIT START" << std::endl;
     
-    // sim3d.init();
+    sim3d.init();
+
     // // for(int x = 0; x < 32; x++){
     // //     for(int y = 0; y < 32; y++){
     // //         for(int z = 0; z < 32; z++){
@@ -113,7 +114,7 @@ int main(int argc, char **argv) {
 
     // std::vector<int> aux = sim3d.readBackAux();
 
-    // std::cout << "END START" << std::endl;
+    std::cout << "INIT END" << std::endl;
 
     // // sim3d.setWall(10, 10, 10, 1);
 
