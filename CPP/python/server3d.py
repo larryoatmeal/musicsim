@@ -44,9 +44,17 @@ sim3d = [None]
 pattern = re.compile('([0-9]+)/([0-9]+)')
 
 def get_args(handler):
+  content_len = int(handler.headers.getheader('content-length', 0))
+  body = handler.rfile.read(content_len)
   s = urllib.unquote(handler.path)
   return map(int, s.split('/')[2:-1])
 
+def get_args_post(handler):
+  content_len = int(handler.headers.getheader('content-length', 0))
+  body = handler.rfile.read(content_len)
+  # s = urllib.unquote(handler.path)
+  print body
+  return map(int, body.split('/')[2:-1])
 
 # def parse(s):
 #     m = pattern.search(s)
@@ -115,7 +123,7 @@ def setWall(handler):
   return "SUCCESS"
 
 def scheduleWalls(handler):
-  args = get_args(handler)
+  args = get_args_post(handler)
   if len(args) % 4 != 0:
     print "BAD ARGS"
     return None
@@ -199,7 +207,7 @@ class RESTRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           r'^/readBackAux/': {'GET': readBackAux, 'media_type': 'application/json'},
           r'^/readBackAudio/': {'GET': readBackAudio, 'media_type': 'application/json'},
           r'^/readBackData/': {'GET': readBackData, 'media_type': 'application/json'},
-          r'^/scheduleWalls/': {'GET': scheduleWalls, 'media_type': 'application/json'},
+          r'^/scheduleWalls/': {'POST': scheduleWalls, 'media_type': 'application/json'},
           r'^/writeWalls/': {'GET': writeWalls, 'media_type': 'application/json'},
           r'^/setListener/': {'GET': setListener, 'media_type': 'application/json'},     
           r'^/setExcitor/': {'GET': setExcitor, 'media_type': 'application/json'},            

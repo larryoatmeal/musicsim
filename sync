@@ -1,2 +1,1 @@
-rsync -avuz -e ssh ./CPP larryw@35.226.198.237:/home/larryw/code &
-rsync -avuz -e ssh larryw@35.226.198.237:/home/larryw/code/CPP/cpu_only/build/out ./gpu_out 
+rsync -avuz -e ssh ./CPP larry@csiga.csail.mit.edu:/media/ssd1/larry/code
