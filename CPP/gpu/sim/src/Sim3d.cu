@@ -104,7 +104,10 @@ void Sim3D::init(){
   // {
   //     defaultDim = MIN(defaultDim, k_dim_qa);
   // }
-
+    
+  printf("DT %f\n", DT);
+  printf("DX %f\n", DS);
+  printf("DELTA_P_MAX %f\n", DELTA_P_MAX);
 
   // Ensure that the inner data starts on a 128B boundary
   // Note volumesize already includes padding from the radius!
@@ -207,6 +210,7 @@ void Sim3D::clean(){
 }
 
 void Sim3D::step(int n){
+  int onePercentStep = n/100;
   for(int i = 0; i < n; i++){
     AudioKernel3D<<<m_dimGrid, m_dimBlock>>>(m_bufferDst, m_bufferSrc, m_bufferAux, m_audioBuffer, m_dimx, m_dimy, m_dimz, m_i,
     m_i_global_listener, m_i_global_p_bore, m_p_mouth);
@@ -217,6 +221,10 @@ void Sim3D::step(int n){
     m_bufferDst = m_bufferSrc;
     m_bufferSrc = tmp;
     m_i += 1;
+    
+    if(i % onePercentStep == 0){
+      printf("%d/100\n", i/onePercentStep);
+    }
   }
 }
 
@@ -230,8 +238,11 @@ std::vector<float> Sim3D::readBackAudio(){
   // Read the result back
   checkCudaErrors(cudaMemcpy(output_from_gpu, m_audioBuffer, sizeof(float) * MAX_AUDIO_SIZE, cudaMemcpyDeviceToHost));
   std::cout << "Samples: " << m_i << std::endl;
-  std::vector<float> v(m_i);
-  for(int i = 0; i < m_i; i++){
+  std::cout << "Actual audio samples: " << m_i / OVERSAMPLE << std::endl;
+
+  int N = m_i / OVERSAMPLE;
+  std::vector<float> v(N);
+  for(int i = 0; i < N; i++){
     v[i] = output_from_gpu[i];
   }
 
@@ -334,6 +345,9 @@ int getBits(int val, int shift, int mask){
 int getBetaValue(int val){
   return getBit(val, BETA_SHIFT);
 }
+int getExcitorValue(int val){
+  return getBit(val, EXCITE_SHIFT);
+}
 
 void Sim3D::setSigma(int x, int y, int z, int level){
   int i = getGlobalIndex(x, y, z);
@@ -425,7 +439,8 @@ void Sim3D::calculateAndUpdateAux(int* aux){
           int b = 1 - getBetaValue(aux[base + stride_y]);
           int c = 1 - getBetaValue(aux[base - stride_z]);
           int d = 1 - getBetaValue(aux[base + stride_z]);
-          
+
+  
           int norm = 1 + std::max(a, b) + std::max(c, d);
           aux[i] = setValues(aux[i], norm, TWO_BIT, BETA_VX_NORMALIZE);
         }
@@ -463,8 +478,8 @@ void Sim3D::calculateAndUpdateAux(int* aux){
 
           int a = 1 - getBetaValue(aux[base - stride_x]);
           int b = 1 - getBetaValue(aux[base + stride_x]);
-          int c = 1 - getBetaValue(aux[base - stride_z]);
-          int d = 1 - getBetaValue(aux[base + stride_z]);
+          int c = 1 - getBetaValue(aux[base - stride_y]);
+          int d = 1 - getBetaValue(aux[base + stride_y]);
           
           int norm = 1 + std::max(a, b) + std::max(c, d);
           aux[i] = setValues(aux[i], norm, TWO_BIT, BETA_VZ_NORMALIZE);
