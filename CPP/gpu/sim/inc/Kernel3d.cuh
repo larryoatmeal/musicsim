@@ -28,5 +28,11 @@ __global__ void AudioKernel3D(
   int i_global_p_bore,
   float p_mouth
 );
+__constant__ float DT;
+__constant__ float DS;
+__constant__ float ZN;
+
+
+
 
 #endif

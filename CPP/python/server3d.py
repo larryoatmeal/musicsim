@@ -43,17 +43,17 @@ sim3d = [None]
 
 pattern = re.compile('([0-9]+)/([0-9]+)')
 
-def get_args(handler):
+def get_args(handler, converter = int):
   content_len = int(handler.headers.getheader('content-length', 0))
   body = handler.rfile.read(content_len)
   s = urllib.unquote(handler.path)
-  return map(int, s.split('/')[2:-1])
+  return map(converter, s.split('/')[2:-1])
 
 def get_args_post(handler):
   content_len = int(handler.headers.getheader('content-length', 0))
   body = handler.rfile.read(content_len)
   # s = urllib.unquote(handler.path)
-  print body
+  # print body
   return map(int, body.split('/')[2:-1])
 
 # def parse(s):
@@ -100,6 +100,17 @@ def readBackData(handler):
         data[i][j] = 1000000000
   return data
       
+def readBackDataCoords(handler):
+  args = get_args_post(handler)
+  if len(args) % 3 != 0:
+    print "BAD ARGS"
+    return None
+  
+  coords = []
+  for i in range(0, len(args), 3):
+    coords.append([args[i], args[i+1], args[i+2]])
+  # print coords
+  return sim3d[0].readBackDataCoords(coords)
 
 def readBackAux(handler):
   return sim3d[0].readBackAux()
@@ -114,6 +125,23 @@ def step(handler):
 
 def setSigma(handler):
   return get_args(handler)
+
+
+def setDT(handler):
+  val = get_args(handler, float)
+  sim3d[0].DT(val[0])
+  print "YODT", val
+  return "HELLO"
+
+def setDS(handler):
+  val = get_args(handler, float)
+  sim3d[0].DS(val[0])
+  return "HELLO"
+
+def setZN(handler):
+  val = get_args(handler, float)
+  sim3d[0].ZN(val[0])
+  return "HELLO"
 
 def setWall(handler):
   args = get_args(handler)
@@ -207,7 +235,13 @@ class RESTRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
           r'^/readBackAux/': {'GET': readBackAux, 'media_type': 'application/json'},
           r'^/readBackAudio/': {'GET': readBackAudio, 'media_type': 'application/json'},
           r'^/readBackData/': {'GET': readBackData, 'media_type': 'application/json'},
+          r'^/readBackDataCoords/': {'POST': readBackDataCoords, 'media_type': 'application/json'},
           r'^/scheduleWalls/': {'POST': scheduleWalls, 'media_type': 'application/json'},
+
+          r'^/setZN/': {'GET': setZN, 'media_type': 'application/json'},
+          r'^/setDT/': {'GET': setDT, 'media_type': 'application/json'},
+          r'^/setDS/': {'GET': setDS, 'media_type': 'application/json'},
+
           r'^/writeWalls/': {'GET': writeWalls, 'media_type': 'application/json'},
           r'^/setListener/': {'GET': setListener, 'media_type': 'application/json'},     
           r'^/setExcitor/': {'GET': setExcitor, 'media_type': 'application/json'},            

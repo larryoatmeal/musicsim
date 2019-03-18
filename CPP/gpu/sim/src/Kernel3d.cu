@@ -10,23 +10,39 @@
  */
 
 
+ #include <stdio.h>
 
-
+ #include "Kernel3d.cuh"
  #include "constants.h"
  #include "Kernel3dGPU.h"
  #include <cooperative_groups.h>
- 
+ #include <helper_functions.h>
+#include <helper_cuda.h>
  namespace cg = cooperative_groups;
  
  // Note: If you change the RADIUS, you should also change the unrolling below
 
 //  __constant__ float stencil[RADIUS + 1];
  
+void writeDT(float val){
+    checkCudaErrors(cudaMemcpyToSymbol(DT, &val, sizeof(float)));
+}
+void writeDS(float val){
+    checkCudaErrors(cudaMemcpyToSymbol(DS, &val, sizeof(float)));
+}
+void writeZN(float val){
+    checkCudaErrors(cudaMemcpyToSymbol(ZN, &val, sizeof(float)));
+}
+
+
+
+
 __device__ int getBitsCUDA(int val, int shift, int mask){
     return (val >> shift) & mask;
 }
 
 __device__ float getSigmaCUDA(int aux){
+    float PML_SCALE = (0.5 / DT / PML);
     int sigmaN = getBitsCUDA(aux, SIGMA_SHIFT, THREE_BIT);
     return PML_SCALE * (sigmaN);
 }
@@ -50,6 +66,8 @@ __device__ float pressureStep(
     float sigma  
 )
   {
+    float COEFF_DIVERGENCE = RHO * Cs * Cs * DT/DS;
+
     float divergence = v_x + v_y + v_z - v_x_left - v_y_up - v_z_behind;
     float p_denom = 1 + (1 - beta + sigma) * DT;
     return (p - COEFF_DIVERGENCE * divergence)/p_denom;
@@ -105,6 +123,12 @@ __device__ float pressureStep(
   float p_mouth
 )
  {
+    float COEFF_GRADIENT = (DT/RHO/DS);
+    float ADMITTANCE = (1.0/ZN);
+    // printf("DT %f\n", DT);
+    // printf("DS %f\n", DS);
+    // printf("ZN %f\n", ZN);
+
      bool validr = true;
      bool validw = true;
      const int gtidx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -317,7 +341,7 @@ __device__ float pressureStep(
 
 
         int isExcitor = getExcitorCUDA(aux);
-        
+        int isBeta = getBetaCUDA(aux);
 
         
         int beta_vx_dir =     getBitsCUDA(aux, BETA_VX_LEVEL, TWO_BIT) - 1;
@@ -327,22 +351,30 @@ __device__ float pressureStep(
         int beta_vz_dir   =   getBitsCUDA(aux, BETA_VZ_LEVEL, TWO_BIT) - 1;
         int beta_vz_n   =     getBitsCUDA(aux, BETA_VZ_NORMALIZE, TWO_BIT);
 
-        // float vb_x = 0;
-        // float vb_y = 0;
-        // float vb_z = 0;
-
-
 
         // if beta_vx_dir = 1, selects first term, if -1 selects other term
-        float vb_x = (max(beta_vx_dir, 0) * value.x + min(beta_vx_dir, 0) * valueRight.x) * ADMITTANCE;
-        float vb_y = (max(beta_vy_dir, 0) * value.x + min(beta_vy_dir, 0) * valueDown.x) * ADMITTANCE;
-        float vb_z = (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
+        float vb_x = (max(beta_vx_dir, 0) * newPressure + min(beta_vx_dir, 0) * newPressureRight) * ADMITTANCE;
+        float vb_y = (max(beta_vy_dir, 0) * newPressure + min(beta_vy_dir, 0) * newPressureDown) * ADMITTANCE;
+        float vb_z = (max(beta_vz_dir, 0) * newPressure + min(beta_vz_dir, 0) * newPressureInfront) * ADMITTANCE;
 
         if(isExcitor == 1){
-            float delta_p = max(p_mouth - input[i_global_p_bore].x, 0.0f);
-            float excitation = (1 - delta_p / DELTA_P_MAX) * sqrt(2 * delta_p / RHO) * VB_COEFF;
-            vb_z += excitation;
+            float delta_p = max(p_mouth/3000.0 - input[i_global_p_bore].x, 0.0f);
+            float delta_p_mod = max(0.05 * DELTA_P_MAX, delta_p);            
+            float shelf = 0.5 + 0.5 * tanh(4 * (-1 + (DELTA_P_MAX - delta_p_mod)/(0.1 * DELTA_P_MAX))); //unclear if DELTA_P_MAX is in the denominator...
+            // float shelf = 1;
+
+            float u_bore = W_J * H_R * max((1 - delta_p / DELTA_P_MAX), 0.0) * sqrt(2 * delta_p / RHO);
+            float excitation = u_bore / (DS * DS * 113); //hashtag units!  
+            vb_z = excitation;
+            
+            // printf("delta_p %f, p_mouth %f, p_bore %f, u_bore %f\n", delta_p, p_mouth/3000.0, input[i_global_p_bore].x, u_bore);
+            
+            // vb_z = round(sin(iter * DT * 2 * 3.1415 * 880));
         }
+
+        newPressure = isBeta * newPressure; //hard set wall pressures to zero
+        //velocity computations next to beta cells should not rely on pressure equation, so pressure doesn't matter
+
 
         // else{
         //     vb_z += (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
@@ -351,7 +383,7 @@ __device__ float pressureStep(
         
         int sigma = getSigmaCUDA(aux);
 
-        int beta_x = beta_vx_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        int beta_x = min(isBeta, getBetaCUDA(auxRight)); //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
         float grad_x = newPressureRight - newPressure;
         float sigma_prime_dt_x = (1 - beta_x + sigma) * DT;
         float current_vx = value.y;
@@ -359,7 +391,7 @@ __device__ float pressureStep(
 
         float new_vx = (beta_x * current_vx - beta_x * COEFF_GRADIENT * grad_x + sigma_prime_dt_x * vb_x)/(beta_x + sigma_prime_dt_x);
 
-        int beta_y = beta_vy_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        int beta_y = min(isBeta, getBetaCUDA(auxDown)); //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
         float grad_y = newPressureDown - newPressure;
         float sigma_prime_dt_y = (1 - beta_y + sigma) * DT;
         float current_vy = value.z;
@@ -367,7 +399,7 @@ __device__ float pressureStep(
         float new_vy = (beta_y * current_vy - beta_y * COEFF_GRADIENT * grad_y + sigma_prime_dt_y * vb_y)/(beta_y + sigma_prime_dt_y);
 
 
-        int beta_z = beta_vz_dir == 0; //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
+        int beta_z = min(isBeta, getBetaCUDA(auxInfront)); //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
         float grad_z = newPressureInfront - newPressure;
         float sigma_prime_dt_z = (1 - beta_z + sigma) * DT;
         float current_vz = value.w;
@@ -383,6 +415,9 @@ __device__ float pressureStep(
         if(validw)
             output[outputIndex] = value;
 
+        if(iter % OVERSAMPLE == 0 && outputIndex == i_global_listener){
+            audioBuffer[iter/OVERSAMPLE] = newPressure;
+        }
 //          // Compute the output value
 //          float4 value = stencil[0] * current;
 //  #pragma unroll 4

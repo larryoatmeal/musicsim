@@ -14,6 +14,8 @@ class Sim3D{
         void reset();
         std::vector<float> readBackAudio();
         std::vector< std::vector<float> > readBackData();
+        std::vector< std::vector<float> > readBackDataCoords(std::vector< std::vector<int> > coords);
+
         std::vector<int> readBackAux();
 
         void scheduleWall(int x, int y, int z, int val);
@@ -24,9 +26,16 @@ class Sim3D{
 
         void setListener(int x, int y, int z);
         void setExcitor(int x, int y, int z, int val);
+
+        void setExcitors(std::vector< std::vector<int> > excitors);
+
         void setPBore(int x, int y, int z);
         void setPressureMouth(float pressure);
 
+
+        void setDT(float val);
+        void setDS(float val);
+        void setZN(float val);
 
         int getGlobalIndex(int x, int y, int z);
 
@@ -65,6 +74,11 @@ class Sim3D{
 
       //
       std::vector< std::vector <int> > m_scheduledWalls;
+
+
+    //   float m_dt;
+    //   float m_ds;
+    //   float m_zn;
         
 };
 

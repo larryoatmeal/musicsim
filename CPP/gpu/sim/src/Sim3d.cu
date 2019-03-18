@@ -3,6 +3,8 @@
 #include <helper_functions.h>
 #include <helper_cuda.h>
 #include "constants.h"
+#include "Kernel3d.cu"
+
 #include <algorithm> 
 const int MAX_AUDIO_SIZE = 44100 * 10;
 
@@ -105,9 +107,9 @@ void Sim3D::init(){
   //     defaultDim = MIN(defaultDim, k_dim_qa);
   // }
     
-  printf("DT %f\n", DT);
-  printf("DX %f\n", DS);
-  printf("DELTA_P_MAX %f\n", DELTA_P_MAX);
+  // printf("DT %f\n", DT);
+  // printf("DX %f\n", DS);
+  // printf("DELTA_P_MAX %f\n", DELTA_P_MAX);
 
   // Ensure that the inner data starts on a 128B boundary
   // Note volumesize already includes padding from the radius!
@@ -220,16 +222,31 @@ void Sim3D::step(int n){
     float4 *tmp = m_bufferDst;
     m_bufferDst = m_bufferSrc;
     m_bufferSrc = tmp;
-    m_i += 1;
-    
-    if(i % onePercentStep == 0){
-      printf("%d/100\n", i/onePercentStep);
+    m_i += 1;    
+    cudaDeviceSynchronize();
+
+    if(onePercentStep > 0){
+      if(i % onePercentStep == 0){
+        printf("%d/100\n", i/onePercentStep);
+      }
+    }
+    else{
+      printf("%d\n", i);
     }
   }
 }
 
 
 
+void Sim3D::setDT(float val){
+  writeDT(val);
+};
+void Sim3D::setDS(float val){
+  writeDS(val);
+};
+void Sim3D::setZN(float val){
+  writeZN(val);
+};
 
 std::vector<float> Sim3D::readBackAudio(){
   float * output_from_gpu = (float *) calloc(MAX_AUDIO_SIZE, sizeof(float));
@@ -273,6 +290,15 @@ std::vector< std::vector<float> > Sim3D::readBackData(){
   return v;
 };
 
+std::vector< std::vector<float> > Sim3D::readBackDataCoords(std::vector< std::vector<int> > coords){
+  std::vector< std::vector<float> > v = readBackData();
+  std::vector< std::vector<float> > data;
+  for(int i = 0; i < coords.size(); i++){
+    data.push_back(v[getGlobalIndex(coords[i][0], coords[i][1], coords[i][2])]);
+  }
+
+  return data;
+};
 
 
 std::vector<int> Sim3D::readBackAux(){
@@ -501,6 +527,23 @@ void Sim3D::setWall(int x, int y, int z, int val){
   calculateAndUpdateAux(aux);
   free(aux);
 }
+
+void Sim3D::setExcitors(std::vector< std::vector<int> > excitors){
+  int *aux = getAux();
+  for(int i = 0; i < excitors.size(); i++){
+    int x = excitors[i][0];
+    int y = excitors[i][1];
+    int z = excitors[i][2];
+    int val = excitors[i][3];
+    int loc = getGlobalIndex(x, y, z);
+    aux[loc] = setValues(aux[loc], val, ONE_BIT, EXCITE_SHIFT);
+    aux[loc] = setValues(aux[loc], 0, ONE_BIT, BETA_SHIFT);
+  }
+  
+  calculateAndUpdateAux(aux); 
+  free(aux);
+};
+
 
 void Sim3D::setListener(int x_l, int y_l, int z_l){
   m_i_global_listener = getGlobalIndex(x_l, y_l, z_l);

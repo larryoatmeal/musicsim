@@ -72,7 +72,14 @@ PYBIND11_MODULE(pytest, m) {
         .def("setPressureMouth", &Sim3D::setPressureMouth)
         .def("setExcitor", &Sim3D::setExcitor)
         .def("step", &Sim3D::step)
-        .def("setListener", &Sim3D::setListener);        
+        .def("setListener", &Sim3D::setListener)
+        .def("DT", &Sim3D::setDT)
+        .def("DS", &Sim3D::setDS)
+        .def("ZN", &Sim3D::setZN)
+        .def("readBackDataCoords", &Sim3D::readBackDataCoords);
+
+
+        
 }
 #endif
 
