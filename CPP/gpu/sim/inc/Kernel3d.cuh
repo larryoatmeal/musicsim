@@ -31,7 +31,8 @@ __global__ void AudioKernel3D(
 __constant__ float DT;
 __constant__ float DS;
 __constant__ float ZN;
-
+__constant__ int numExcitor;
+__constant__ int excitorMode;
 
 
 

@@ -34,6 +34,8 @@ include_directories(thirdparty/AudioFile)
 
 add_subdirectory(pybind11)
 
+add_subdirectory(thirdparty/DSPFilters/shared/DSPFilters)
+include_directories(thirdparty/DSPFilters/shared/DSPFilters/include)
 
 set (SRC_DIR "src/")
 
@@ -67,7 +69,7 @@ target_link_libraries(a4 vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim
 
 
 pybind11_add_module(pytest ${CPP_FILES} ${CPP_HEADERS} ${STB_SRC})
-target_link_libraries(pytest vecmath AudioFile ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
+target_link_libraries(pytest vecmath AudioFile DSPFilters ${CMAKE_SOURCE_DIR}/../gpu/sim/libSim.a /usr/local/cuda/lib64/libcudart.so)
 target_compile_definitions(pytest PRIVATE PYTHON=1)
 target_compile_definitions(pytest PRIVATE LOCAL=0)
 

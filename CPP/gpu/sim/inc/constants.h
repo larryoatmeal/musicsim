@@ -10,12 +10,36 @@
 // __constant__ float CFL_MULTIPLIER;
 
 
-#define OVERSAMPLE 5
+
+#define OVERSAMPLE 13
 #define SAMPLING_HZ ( LISTEN_HZ * OVERSAMPLE * 1.0)
 
 #define Cs 3.4723e2 //speed of sound
 
 #define SQRT_3 1.73205080757
+
+
+
+#define a0 0.010369125065929718
+#define a1 0.020738250131859436
+#define a2 0.010369125065929718
+#define b1 -1.691991340594157
+#define b2 0.7334678408578759
+
+
+// #define a0 0.00011827672500940037
+// #define a1 0.00023655345001880073
+// #define a2 0.00011827672500940037
+// #define b1 -1.9690034772368936
+// #define b2 0.9694765841369313
+
+
+// #define a0 0.000029797435414526333
+// #define a1 0.000059594870829052666
+// #define a2 0.000029797435414526333
+// #define b1  -1.9845008303721605
+// #define b2  0.9846200201138187
+
 
 // #define DT (1/SAMPLING_HZ)
 // #define DS (DT * Cs * SQRT_3 * 1.75) 
@@ -45,11 +69,15 @@
 
 // #define H_BORE  20  // 15mm, bore diameter of clarinet
 // #define H_DS  (H_BORE * DS)
+// #define W_J  1.2e-2
 #define W_J  1.2e-2
 #define H_R  6e-4
+// #define H_R  6e-2
+
+
 #define K_R  8e6
 #define DELTA_P_MAX  (K_R * H_R)
-#define W_J_H_R  (W_J * H_R)
+// #define W_J_H_R  (W_J * H_R)
 // #define VB_COEFF  (W_J_H_R / H_DS)
 
 

@@ -17,9 +17,10 @@
  #include "Kernel3dGPU.h"
  #include <cooperative_groups.h>
  #include <helper_functions.h>
-#include <helper_cuda.h>
+ #include <helper_cuda.h>
  namespace cg = cooperative_groups;
  
+
  // Note: If you change the RADIUS, you should also change the unrolling below
 
 //  __constant__ float stencil[RADIUS + 1];
@@ -33,9 +34,12 @@ void writeDS(float val){
 void writeZN(float val){
     checkCudaErrors(cudaMemcpyToSymbol(ZN, &val, sizeof(float)));
 }
-
-
-
+void writeNumExcitors(int val){
+    checkCudaErrors(cudaMemcpyToSymbol(numExcitor, &val, sizeof(int)));
+}
+void writeExcitorMode(int val){
+    checkCudaErrors(cudaMemcpyToSymbol(excitorMode, &val, sizeof(int)));
+}
 
 __device__ int getBitsCUDA(int val, int shift, int mask){
     return (val >> shift) & mask;
@@ -123,8 +127,10 @@ __device__ float pressureStep(
   float p_mouth
 )
  {
-    float COEFF_GRADIENT = (DT/RHO/DS);
-    float ADMITTANCE = (1.0/ZN);
+    const float COEFF_GRADIENT = (DT/RHO/DS);
+    const float ADMITTANCE = (1.0/ZN);
+
+    
     // printf("DT %f\n", DT);
     // printf("DS %f\n", DS);
     // printf("ZN %f\n", ZN);
@@ -239,7 +245,7 @@ __device__ float pressureStep(
          inputIndex  += stride_z;
          outputIndex += stride_z;
          cg::sync(cta);
- 
+         
          // Note that for the work items on the boundary of the problem, the
          // supplied index when reading the halo (below) may wrap to the
          // previous/next row or even the previous/next xy-plane. This is
@@ -251,9 +257,6 @@ __device__ float pressureStep(
          // Halo above & below
          if (ltidy < RADIUS)
          {
-             tile[ltidy][tx]                  = input[outputIndex - RADIUS * stride_y];
-             tile[ltidy + worky + RADIUS][tx] = input[outputIndex + worky * stride_y];
-
              tile[ltidy][tx]                  = input[outputIndex - RADIUS * stride_y];
              tile[ltidy + worky + RADIUS][tx] = input[outputIndex + worky * stride_y];
          }
@@ -306,11 +309,6 @@ __device__ float pressureStep(
             getSigmaCUDA(aux)
         );
 
-
-        // if(abs(input[outputIndex + 1].x - valueRight.x) > 0.00001){
-        //     newPressure = 0;
-        // }
-
         float newPressureRight = pressureStep(
             valueRight.x, 
             valueRight.y, value.y, //don't be confused, v_x is y oops
@@ -343,45 +341,29 @@ __device__ float pressureStep(
         int isExcitor = getExcitorCUDA(aux);
         int isBeta = getBetaCUDA(aux);
 
-        
-        int beta_vx_dir =     getBitsCUDA(aux, BETA_VX_LEVEL, TWO_BIT) - 1;
-        int beta_vx_n   =     getBitsCUDA(aux, BETA_VX_NORMALIZE, TWO_BIT);
-        int beta_vy_dir =     getBitsCUDA(aux, BETA_VY_LEVEL, TWO_BIT) - 1; 
-        int beta_vy_n   =     getBitsCUDA(aux, BETA_VY_NORMALIZE, TWO_BIT);
-        int beta_vz_dir   =   getBitsCUDA(aux, BETA_VZ_LEVEL, TWO_BIT) - 1;
-        int beta_vz_n   =     getBitsCUDA(aux, BETA_VZ_NORMALIZE, TWO_BIT);
-
-
-        // if beta_vx_dir = 1, selects first term, if -1 selects other term
-        float vb_x = (max(beta_vx_dir, 0) * newPressure + min(beta_vx_dir, 0) * newPressureRight) * ADMITTANCE;
-        float vb_y = (max(beta_vy_dir, 0) * newPressure + min(beta_vy_dir, 0) * newPressureDown) * ADMITTANCE;
-        float vb_z = (max(beta_vz_dir, 0) * newPressure + min(beta_vz_dir, 0) * newPressureInfront) * ADMITTANCE;
-
+        float vb_x = 0;
+        float vb_y = 0;
+        float vb_z = 0;
         if(isExcitor == 1){
-            float delta_p = max(p_mouth/3000.0 - input[i_global_p_bore].x, 0.0f);
-            float delta_p_mod = max(0.05 * DELTA_P_MAX, delta_p);            
-            float shelf = 0.5 + 0.5 * tanh(4 * (-1 + (DELTA_P_MAX - delta_p_mod)/(0.1 * DELTA_P_MAX))); //unclear if DELTA_P_MAX is in the denominator...
-            // float shelf = 1;
+            // const int ubore_filter_position = 10 * 44100 - 1 -  4; //super hacky use audio buffer as global
+            if(excitorMode == 0){
+                float delta_p = max(p_mouth - input[i_global_p_bore].x, 0.0f);
+                float u_bore =  W_J * H_R * max((1 - delta_p / DELTA_P_MAX), 0.0) * sqrt(2 * delta_p / RHO) ;
+                float excitation = u_bore / (DS * DS * numExcitor); //hashtag units!  
+                
+                vb_z = excitation;
+                vb_y = 0;
+                vb_x = 0;
+            }else if(excitorMode == 1){
+                vb_z = sin(iter * DT * 2 * 3.14159265359 * 440);
+                vb_y = 0;
+                vb_x = 0;
+            }else{
 
-            float u_bore = W_J * H_R * max((1 - delta_p / DELTA_P_MAX), 0.0) * sqrt(2 * delta_p / RHO);
-            float excitation = u_bore / (DS * DS * 113); //hashtag units!  
-            vb_z = excitation;
-            
-            // printf("delta_p %f, p_mouth %f, p_bore %f, u_bore %f\n", delta_p, p_mouth/3000.0, input[i_global_p_bore].x, u_bore);
-            
-            // vb_z = round(sin(iter * DT * 2 * 3.1415 * 880));
+            }
         }
 
-        newPressure = isBeta * newPressure; //hard set wall pressures to zero
-        //velocity computations next to beta cells should not rely on pressure equation, so pressure doesn't matter
-
-
-        // else{
-        //     vb_z += (max(beta_vz_dir, 0) * value.x + min(beta_vz_dir, 0) * valueInfront.x) * ADMITTANCE;
-        // }
-
-        
-        int sigma = getSigmaCUDA(aux);
+        float sigma = getSigmaCUDA(aux);
 
         int beta_x = min(isBeta, getBetaCUDA(auxRight)); //if beta_vx_dir = -1 or 1, then beta_vx_dir = 0 as expected
         float grad_x = newPressureRight - newPressure;
@@ -415,21 +397,9 @@ __device__ float pressureStep(
         if(validw)
             output[outputIndex] = value;
 
-        if(iter % OVERSAMPLE == 0 && outputIndex == i_global_listener){
-            audioBuffer[iter/OVERSAMPLE] = newPressure;
+        if(outputIndex == i_global_listener){
+            audioBuffer[iter] = newPressure;
         }
-//          // Compute the output value
-//          float4 value = stencil[0] * current;
-//  #pragma unroll 4
- 
-//          for (int i = 1 ; i <= RADIUS ; i++)
-//          {
-//              value += stencil[i] * (infront[i-1] + behind[i-1] + tile[ty - i][tx] + tile[ty + i][tx] + tile[ty][tx - i] + tile[ty][tx + i]);
-//          }
- 
-//          // Store the output value
-//          if (validw)
-//              output[outputIndex] = value;
      }
  }
  

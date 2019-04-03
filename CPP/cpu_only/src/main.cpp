@@ -18,6 +18,8 @@
 
 
 #include "Sim3d.h"
+#include "Sim3dCPU.h"
+
 
 
 #ifdef PYTHON
@@ -61,6 +63,7 @@ PYBIND11_MODULE(pytest, m) {
         .def("init", &Sim3D::init)
         .def("clean", &Sim3D::clean)
         .def("reset", &Sim3D::reset)
+        .def("restart", &Sim3D::restart)
         .def("setSigma", &Sim3D::setSigma)
         .def("setWall", &Sim3D::setWall)
         .def("readBackAux", &Sim3D::readBackAux)
@@ -71,13 +74,39 @@ PYBIND11_MODULE(pytest, m) {
         .def("setPBore", &Sim3D::setPBore)
         .def("setPressureMouth", &Sim3D::setPressureMouth)
         .def("setExcitor", &Sim3D::setExcitor)
+        .def("setExcitors", &Sim3D::setExcitors)
         .def("step", &Sim3D::step)
         .def("setListener", &Sim3D::setListener)
         .def("DT", &Sim3D::setDT)
         .def("DS", &Sim3D::setDS)
         .def("ZN", &Sim3D::setZN)
-        .def("readBackDataCoords", &Sim3D::readBackDataCoords);
+        .def("setExcitorMode", &Sim3D::setExcitorMode)
+        .def("readBackDataCoords", &Sim3D::readBackDataCoords)
+        .def("setNumExcitorMultiple", &Sim3D::setNumExcitorMultiple);
 
+    py::class_<Sim3DCPU>(m, "sim3dCPU")
+        .def(py::init<const int &, const int &, const int &>())
+        .def("init", &Sim3DCPU::init)
+        .def("clean", &Sim3DCPU::clean)
+        .def("reset", &Sim3DCPU::reset)
+        .def("restart", &Sim3DCPU::restart)
+        .def("setSigma", &Sim3DCPU::setSigma)
+        .def("setWall", &Sim3DCPU::setWall)
+        .def("readBackAux", &Sim3DCPU::readBackAux)
+        .def("readBackAudio", &Sim3DCPU::readBackAudio)
+        .def("readBackData", &Sim3DCPU::readBackData)
+        .def("scheduleWall", &Sim3DCPU::scheduleWall)
+        .def("writeWalls", &Sim3DCPU::writeWalls)
+        .def("setPBore", &Sim3DCPU::setPBore)
+        .def("setPressureMouth", &Sim3DCPU::setPressureMouth)
+        .def("setExcitor", &Sim3DCPU::setExcitor)
+        .def("setExcitors", &Sim3DCPU::setExcitors)
+        .def("step", &Sim3DCPU::step)
+        .def("setListener", &Sim3DCPU::setListener)
+        .def("DT", &Sim3DCPU::setDT)
+        .def("DS", &Sim3DCPU::setDS)
+        .def("ZN", &Sim3DCPU::setZN)
+        .def("readBackDataCoords", &Sim3DCPU::readBackDataCoords);
 
         
 }

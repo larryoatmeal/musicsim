@@ -12,6 +12,10 @@ class Sim3D{
         void step(int n);
         void init();
         void reset();
+        void restart();
+
+
+
         std::vector<float> readBackAudio();
         std::vector< std::vector<float> > readBackData();
         std::vector< std::vector<float> > readBackDataCoords(std::vector< std::vector<int> > coords);
@@ -30,12 +34,15 @@ class Sim3D{
         void setExcitors(std::vector< std::vector<int> > excitors);
 
         void setPBore(int x, int y, int z);
+        void setNumExcitorMultiple(float multipler);
+        
         void setPressureMouth(float pressure);
 
 
         void setDT(float val);
         void setDS(float val);
         void setZN(float val);
+        void setExcitorMode(int val);
 
         int getGlobalIndex(int x, int y, int z);
 
@@ -62,6 +69,8 @@ class Sim3D{
       int m_i;
 
       int m_volumeSize;
+
+      float m_multiplier = 50;
 
       dim3              m_dimBlock;
       dim3              m_dimGrid;

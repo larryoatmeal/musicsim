@@ -288,10 +288,13 @@ Sim.o:src/Sim.cu
 Sim3d.o:src/Sim3d.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
+Sim3dCPU.o:src/Sim3dCPU.cu
+	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
 #basically [output file]: [input file dependencies]
 #make will figure out the dependencies
 
-libSim.a: Sim3d.o Kernel3d.o
+libSim.a: Sim3d.o Kernel3d.o Sim3dCPU.o
 	$(EXEC) ar rcs $@ $+
 
 testInterop: libSim.a

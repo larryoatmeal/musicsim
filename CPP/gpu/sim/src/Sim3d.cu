@@ -6,7 +6,7 @@
 #include "Kernel3d.cu"
 
 #include <algorithm> 
-const int MAX_AUDIO_SIZE = 44100 * 10;
+const int MAX_AUDIO_SIZE = 44100 * OVERSAMPLE * 10;
 
 bool getTargetDeviceGlobalMemSize(memsize_t *result, const int argc, const char **argv)
 {
@@ -121,7 +121,9 @@ void Sim3D::init(){
   checkCudaErrors(cudaGetDeviceCount(&deviceCount));
 
   // Select target device (device 0 by default)
-  targetDevice = findCudaDevice(0, 0);
+  targetDevice = gpuDeviceInit(2);
+
+
 
   checkCudaErrors(cudaSetDevice(targetDevice));
 
@@ -130,7 +132,6 @@ void Sim3D::init(){
   checkCudaErrors(cudaMalloc((void **)&bufferIn, paddedVolumeSize * sizeof(float4)));
   checkCudaErrors(cudaMalloc((void **)&bufferInAux, paddedVolumeSize * sizeof(int)));
 
-  checkCudaErrors(cudaMalloc((void **)&audioBuffer, MAX_AUDIO_SIZE * sizeof(float)));
   checkCudaErrors(cudaMalloc((void **)&audioBuffer, MAX_AUDIO_SIZE * sizeof(float)));
 
   int userBlockSize = k_blockSizeMax;
@@ -205,10 +206,11 @@ void Sim3D::clean(){
         checkCudaErrors(cudaFree(m_bufferInAux));
     }
 
+
     if (m_audioBuffer)
     {
         checkCudaErrors(cudaFree(m_audioBuffer));
-    }
+    }    
 }
 
 void Sim3D::step(int n){
@@ -247,6 +249,9 @@ void Sim3D::setDS(float val){
 void Sim3D::setZN(float val){
   writeZN(val);
 };
+void Sim3D::setExcitorMode(int val){
+  writeExcitorMode(val);
+};
 
 std::vector<float> Sim3D::readBackAudio(){
   float * output_from_gpu = (float *) calloc(MAX_AUDIO_SIZE, sizeof(float));
@@ -255,17 +260,42 @@ std::vector<float> Sim3D::readBackAudio(){
   // Read the result back
   checkCudaErrors(cudaMemcpy(output_from_gpu, m_audioBuffer, sizeof(float) * MAX_AUDIO_SIZE, cudaMemcpyDeviceToHost));
   std::cout << "Samples: " << m_i << std::endl;
+  std::cout << "OVERSAMPLE: " << OVERSAMPLE << std::endl;
+
+
   std::cout << "Actual audio samples: " << m_i / OVERSAMPLE << std::endl;
 
-  int N = m_i / OVERSAMPLE;
+  // int N = m_i / OVERSAMPLE;
+  int N = m_i;
   std::vector<float> v(N);
+
+  float z1;
+  float z2;
+
   for(int i = 0; i < N; i++){
-    v[i] = output_from_gpu[i];
+    // v[i] = output_from_gpu[i];
+    float in = output_from_gpu[i];
+    float out = in * a0 + z1;
+    z1 = in * a1 + z2 - b1 * out;
+    z2 = in * a2 - b2 * out;
+    v[i] = out;
   }
+  
+
+  std::vector<float> vDown(N/OVERSAMPLE);
+
+
+  for(int i = 0; i < N/OVERSAMPLE; i++){
+    // v[i] = output_from_gpu[i];
+    vDown[i] = v[i * OVERSAMPLE];
+  }
+
+
+
 
   free(output_from_gpu);
   
-  return v;
+  return vDown;
 };
 
 std::vector< std::vector<float> > Sim3D::readBackData(){
@@ -371,9 +401,18 @@ int getBits(int val, int shift, int mask){
 int getBetaValue(int val){
   return getBit(val, BETA_SHIFT);
 }
+
 int getExcitorValue(int val){
   return getBit(val, EXCITE_SHIFT);
 }
+int getBetaValueNotExcitor(int val){
+  if(getExcitorValue(val)){
+    return 1;
+  }else{
+    return getBit(val, BETA_SHIFT) ;
+  }
+}
+
 
 void Sim3D::setSigma(int x, int y, int z, int level){
   int i = getGlobalIndex(x, y, z);
@@ -407,14 +446,14 @@ void Sim3D::calculateAndUpdateAux(int* aux){
 
         int currentAux = aux[i];
 
-        int beta_vx_wall_after = getBetaValue(aux[i + stride_x]);
-        int beta_vx_wall_before = getBetaValue(currentAux);
+        int beta_vx_wall_after = getBetaValueNotExcitor(aux[i + stride_x]);
+        int beta_vx_wall_before = getBetaValueNotExcitor(currentAux);
 
-        int beta_vy_wall_after = getBetaValue(aux[i + stride_y]);
-        int beta_vy_wall_before = getBetaValue(currentAux);
+        int beta_vy_wall_after = getBetaValueNotExcitor(aux[i + stride_y]);
+        int beta_vy_wall_before = getBetaValueNotExcitor(currentAux);
 
-        int beta_vz_wall_after = getBetaValue(aux[i + stride_z]);
-        int beta_vz_wall_before = getBetaValue(currentAux);
+        int beta_vz_wall_after = getBetaValueNotExcitor(aux[i + stride_z]);
+        int beta_vz_wall_before = getBetaValueNotExcitor(currentAux);
 
         int beta_vx = 0;
         if(beta_vx_wall_after == 0){
@@ -461,10 +500,10 @@ void Sim3D::calculateAndUpdateAux(int* aux){
             base = i + stride_x;
           }
 
-          int a = 1 - getBetaValue(aux[base - stride_y]);
-          int b = 1 - getBetaValue(aux[base + stride_y]);
-          int c = 1 - getBetaValue(aux[base - stride_z]);
-          int d = 1 - getBetaValue(aux[base + stride_z]);
+          int a = 1 - getBetaValueNotExcitor(aux[base - stride_y]);
+          int b = 1 - getBetaValueNotExcitor(aux[base + stride_y]);
+          int c = 1 - getBetaValueNotExcitor(aux[base - stride_z]);
+          int d = 1 - getBetaValueNotExcitor(aux[base + stride_z]);
 
   
           int norm = 1 + std::max(a, b) + std::max(c, d);
@@ -482,10 +521,10 @@ void Sim3D::calculateAndUpdateAux(int* aux){
             base = i + stride_y;
           }
 
-          int a = 1 - getBetaValue(aux[base - stride_x]);
-          int b = 1 - getBetaValue(aux[base + stride_x]);
-          int c = 1 - getBetaValue(aux[base - stride_z]);
-          int d = 1 - getBetaValue(aux[base + stride_z]);
+          int a = 1 - getBetaValueNotExcitor(aux[base - stride_x]);
+          int b = 1 - getBetaValueNotExcitor(aux[base + stride_x]);
+          int c = 1 - getBetaValueNotExcitor(aux[base - stride_z]);
+          int d = 1 - getBetaValueNotExcitor(aux[base + stride_z]);
           
           int norm = 1 + std::max(a, b) + std::max(c, d);
           aux[i] = setValues(aux[i], norm, TWO_BIT, BETA_VY_NORMALIZE);
@@ -502,10 +541,10 @@ void Sim3D::calculateAndUpdateAux(int* aux){
             base = i + stride_z;
           }
 
-          int a = 1 - getBetaValue(aux[base - stride_x]);
-          int b = 1 - getBetaValue(aux[base + stride_x]);
-          int c = 1 - getBetaValue(aux[base - stride_y]);
-          int d = 1 - getBetaValue(aux[base + stride_y]);
+          int a = 1 - getBetaValueNotExcitor(aux[base - stride_x]);
+          int b = 1 - getBetaValueNotExcitor(aux[base + stride_x]);
+          int c = 1 - getBetaValueNotExcitor(aux[base - stride_y]);
+          int d = 1 - getBetaValueNotExcitor(aux[base + stride_y]);
           
           int norm = 1 + std::max(a, b) + std::max(c, d);
           aux[i] = setValues(aux[i], norm, TWO_BIT, BETA_VZ_NORMALIZE);
@@ -519,6 +558,7 @@ void Sim3D::calculateAndUpdateAux(int* aux){
 }
 
 
+
 void Sim3D::setWall(int x, int y, int z, int val){
   int g = getGlobalIndex(x, y, z);
 
@@ -527,6 +567,7 @@ void Sim3D::setWall(int x, int y, int z, int val){
   calculateAndUpdateAux(aux);
   free(aux);
 }
+
 
 void Sim3D::setExcitors(std::vector< std::vector<int> > excitors){
   int *aux = getAux();
@@ -539,10 +580,16 @@ void Sim3D::setExcitors(std::vector< std::vector<int> > excitors){
     aux[loc] = setValues(aux[loc], val, ONE_BIT, EXCITE_SHIFT);
     aux[loc] = setValues(aux[loc], 0, ONE_BIT, BETA_SHIFT);
   }
-  
+  writeNumExcitors(excitors.size() * m_multiplier);
   calculateAndUpdateAux(aux); 
   free(aux);
 };
+
+void Sim3D::setNumExcitorMultiple(float multipler){
+  m_multiplier = multipler;
+};
+
+
 
 
 void Sim3D::setListener(int x_l, int y_l, int z_l){
@@ -599,6 +646,14 @@ void Sim3D::setExcitor(int x, int y, int z, int val){
   free(aux);
 }
 
+void Sim3D::restart(){
+  m_i = 0;
+  printf("CLEARING TO ZERO \n");
+  checkCudaErrors(cudaMemset(m_audioBuffer, 0, MAX_AUDIO_SIZE * sizeof(float)));
+  checkCudaErrors(cudaMemset(m_bufferDst, 0, m_volumeSize * sizeof(float4)));
+  checkCudaErrors(cudaMemset(m_bufferSrc, 0, m_volumeSize * sizeof(float4)));
+  checkCudaErrors(cudaDeviceSynchronize());
+}
 void Sim3D::reset(){
   // Toggle the buffers
   // Visual Studio 2005 does not like std::swap
