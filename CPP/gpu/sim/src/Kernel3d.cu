@@ -351,7 +351,34 @@ __device__ float pressureStep(
                 float u_bore =  W_J * H_R * max((1 - delta_p / DELTA_P_MAX), 0.0) * sqrt(2 * delta_p / RHO) ;
                 float excitation = u_bore / (DS * DS * numExcitor); //hashtag units!  
                 
-                vb_z = excitation;
+                float in = excitation;
+
+
+                //use audio buffer as extra stroage
+                int zIndex = 13 * 44100 * 5;
+
+                float z1 = 0;
+                float z2 = 0;
+                float out = 0;
+                if(iter % 2 == 0){
+                    z1 = audioBuffer[zIndex];
+                    z2 = audioBuffer[zIndex + 1];
+                    out = in * a0 + z1;
+                    audioBuffer[zIndex + 2] = in * a1 + z2 - b1 * out;
+                    audioBuffer[zIndex + 3]    = in * a2 - b2 * out;
+                }
+
+                else{
+                    z1 = audioBuffer[zIndex + 2];
+                    z2 = audioBuffer[zIndex + 3];
+                    out = in * a0 + z1;
+                    audioBuffer[zIndex] = in * a1 + z2 - b1 * out;
+                    audioBuffer[zIndex + 1]    = in * a2 - b2 * out;
+                }
+
+                //filtered output
+                vb_z = out;
+
                 vb_y = 0;
                 vb_x = 0;
             }else if(excitorMode == 1){

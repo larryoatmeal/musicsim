@@ -39,6 +39,8 @@ Sim3D::Sim3D(int dimx, int dimy, int dimz){
   m_dimy = dimy;
   m_dimz = dimz;
   m_scheduledWalls = std::vector< std::vector<int> >();
+
+  m_gpuNumber = -1;
 };
 
 
@@ -121,8 +123,13 @@ void Sim3D::init(){
   checkCudaErrors(cudaGetDeviceCount(&deviceCount));
 
   // Select target device (device 0 by default)
-  targetDevice = gpuDeviceInit(2);
 
+  
+  if(m_gpuNumber == -1){
+    targetDevice = gpuDeviceInit(2);
+  }else{
+    targetDevice = gpuDeviceInit(m_gpuNumber);
+  }
 
 
   checkCudaErrors(cudaSetDevice(targetDevice));
@@ -216,7 +223,7 @@ void Sim3D::clean(){
 void Sim3D::step(int n){
   int onePercentStep = n/100;
   for(int i = 0; i < n; i++){
-    AudioKernel3D<<<m_dimGrid, m_dimBlock>>>(m_bufferDst, m_bufferSrc, m_bufferAux, m_audioBuffer, m_dimx, m_dimy, m_dimz, m_i,
+    AudioKernel3D<<<m_dimGrid, m_dimBlock>>>(m_bufferSrc, m_bufferDst, m_bufferAux, m_audioBuffer, m_dimx, m_dimy, m_dimz, m_i,
     m_i_global_listener, m_i_global_p_bore, m_p_mouth);
     // Toggle the buffers
     // Visual Studio 2005 does not like std::swap
@@ -252,6 +259,10 @@ void Sim3D::setZN(float val){
 void Sim3D::setExcitorMode(int val){
   writeExcitorMode(val);
 };
+
+void Sim3D::setGPUNumber(int n){
+  m_gpuNumber = n;
+}
 
 std::vector<float> Sim3D::readBackAudio(){
   float * output_from_gpu = (float *) calloc(MAX_AUDIO_SIZE, sizeof(float));

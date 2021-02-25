@@ -82,6 +82,7 @@ PYBIND11_MODULE(pytest, m) {
         .def("ZN", &Sim3D::setZN)
         .def("setExcitorMode", &Sim3D::setExcitorMode)
         .def("readBackDataCoords", &Sim3D::readBackDataCoords)
+        .def("setGPUNumber", &Sim3D::setGPUNumber)
         .def("setNumExcitorMultiple", &Sim3D::setNumExcitorMultiple);
 
     py::class_<Sim3DCPU>(m, "sim3dCPU")
@@ -106,9 +107,12 @@ PYBIND11_MODULE(pytest, m) {
         .def("DT", &Sim3DCPU::setDT)
         .def("DS", &Sim3DCPU::setDS)
         .def("ZN", &Sim3DCPU::setZN)
+        // .def("setGPUNumber", &Sim3DCPU::setGPUNumber)
         .def("readBackDataCoords", &Sim3DCPU::readBackDataCoords);
 
         
+
+
 }
 #endif
 

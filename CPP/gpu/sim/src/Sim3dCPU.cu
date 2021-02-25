@@ -148,9 +148,12 @@ void Sim3DCPU::step(int n){
             // float shelf = 1;
             
             float u_bore = W_J * H_R * std::max((1 - delta_p / DELTA_P_MAX), 0.0) * sqrt(2 * delta_p / RHO) ;
-            float excitation = u_bore / (m_ds * m_ds * 50 * m_numExcitors); //hashtag units!  
+            float excitation = u_bore / (m_ds * m_ds * m_numExcitors); //hashtag units!  
             vb.z = excitation;
-
+            // printf("ds %f\n", m_ds);
+            // printf("pbore %f\n", m_p_mouth);
+            // printf("numExcitors %d\n", m_numExcitors);
+            // printf("VB %f\n", vb.z);
             // // printf("IS EXCITOR\n");
             // printf("p_mouth %f\n", m_p_mouth);
             // printf("p_bore %d %d %d\n", pBore.x, pBore.y, pBore.z);
@@ -232,7 +235,7 @@ std::vector< std::vector<float> > Sim3DCPU::readBackData(){
   for(int i = 0; i < m_volumeSize; i++){
     std::vector<float> vec;
     State output = m_cells[i].oldState;
-    vec.push_back(output.pressure);
+    vec.push_back(output.pressure );
     vec.push_back(output.velocity.x);
     vec.push_back(output.velocity.y);
     vec.push_back(output.velocity.z);

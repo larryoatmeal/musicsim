@@ -16,6 +16,8 @@ class Sim3D{
 
 
 
+
+        void setGPUNumber(int n);
         std::vector<float> readBackAudio();
         std::vector< std::vector<float> > readBackData();
         std::vector< std::vector<float> > readBackDataCoords(std::vector< std::vector<int> > coords);
@@ -67,6 +69,7 @@ class Sim3D{
       int m_dimz;
 
       int m_i;
+      int m_gpuNumber;
 
       int m_volumeSize;
 
